@@ -64,6 +64,28 @@ class SawyerNutAssemblyEnvV2(SawyerXYZEnv):
         }
 
         return reward, info
+    
+    @_assert_task_is_set
+    def evaluate_done(self, obs, action):
+        (
+            reward,
+            reward_grab,
+            reward_ready,
+            reward_success,
+            success
+        ) = self.compute_reward(action, obs)
+
+        info = {
+            'success': float(success),
+            'near_object': reward_ready,
+            'grasp_success': reward_grab >= 0.5,
+            'grasp_reward': reward_grab,
+            'in_place_reward': reward_success,
+            'obj_to_target': 0,
+            'unscaled_reward': reward,
+        }
+
+        return reward, info
 
     @property
     def _target_site_config(self):
@@ -116,8 +138,9 @@ class SawyerNutAssemblyEnvV2(SawyerXYZEnv):
         radius = np.linalg.norm(pos_error[:2])
 
         aligned = radius < 0.02
-        hooked = pos_error[2] > 0.0
+        hooked = pos_error[2] > 0.07
         success = aligned and hooked
+        print(success, "pos_error:", pos_error)
 
         # Target height is a 3D funnel centered on the peg.
         # use the success flag to widen the bottleneck once the agent

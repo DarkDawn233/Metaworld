@@ -6,6 +6,9 @@ from metaworld.policies.policy import Policy, assert_fully_parsed, move
 
 class SawyerBasketballV2Policy(Policy):
 
+    def __init__(self):
+        self.target_success = False
+
     @staticmethod
     @assert_fully_parsed
     def _parse_obs(obs):
@@ -26,36 +29,62 @@ class SawyerBasketballV2Policy(Policy):
             'grab_effort': 3
         })
 
-        action['delta_pos'] = move(o_d['hand_pos'], to_xyz=self._desired_pos(o_d), p=25.)
-        action['grab_effort'] = self._grab_effort(o_d)
+        action['delta_pos'] = move(o_d['hand_pos'], to_xyz=self._desired_pos(o_d, self.target_success), p=25.)
+        action['grab_effort'], self.target_success = self._grab_effort(o_d, self.target_success)
 
         return action.array
+    
+    def reset(self):
+        self.target_success = False
 
     @staticmethod
-    def _desired_pos(o_d):
+    def _desired_pos(o_d, target_success):
         pos_curr = o_d['hand_pos']
         pos_ball = o_d['ball_pos'] + np.array([.0, .0, .01])
         # X is given by hoop_pos
         # Y varies between .85 and .9, so we take avg
         # Z is constant at .35
-        pos_hoop = np.array([o_d['hoop_x'], .875, .35])
+        # pos_hoop = np.array([o_d['hoop_x'], .875, .35])
+        pos_hoop = np.array([o_d['hoop_x'], o_d['hoop_yz'][0]-0.01, .35])
 
+        if target_success:
+            return pos_curr
         if np.linalg.norm(pos_curr[:2] - pos_ball[:2]) > .04:
             return pos_ball + np.array([.0, .0, .3])
         elif abs(pos_curr[2] - pos_ball[2]) > .025:
             return pos_ball
-        elif abs(pos_ball[2] - pos_hoop[2]) > 0.025:
+        elif pos_hoop[2] - pos_ball[2] > 0.025:
             return np.array([pos_curr[0], pos_curr[1], pos_hoop[2]])
         else:
             return pos_hoop
 
+    # @staticmethod
+    # def _grab_effort(o_d):
+    #     pos_curr = o_d['hand_pos']
+    #     pos_ball = o_d['ball_pos']
+
+    #     if np.linalg.norm(pos_curr[:2] - pos_ball[:2]) > 0.04 \
+    #         or abs(pos_curr[2] - pos_ball[2]) > 0.15:
+    #         return -1.
+    #     else:
+    #         return .6
+        
     @staticmethod
-    def _grab_effort(o_d):
+    def _grab_effort(o_d, target_success):
         pos_curr = o_d['hand_pos']
         pos_ball = o_d['ball_pos']
-
+        pos_hoop = np.array([o_d['hoop_x'], o_d['hoop_yz'][0], .35])
+        # print("pos_curr:", pos_curr)
+        # print("pos_ball:", pos_ball)
+        # print("pos_hoop:", pos_hoop)
+        # print(o_d)
+        if target_success:
+            return -1, True
         if np.linalg.norm(pos_curr[:2] - pos_ball[:2]) > 0.04 \
             or abs(pos_curr[2] - pos_ball[2]) > 0.15:
-            return -1.
+            return -1., False
+        elif np.linalg.norm(pos_curr[:2] - pos_hoop[:2]) < 0.03 \
+            and abs(pos_curr[2] - pos_hoop[2]) < 0.01:
+            return -1., True
         else:
-            return .6
+            return .6, False

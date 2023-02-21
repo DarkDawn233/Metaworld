@@ -52,11 +52,12 @@ class SawyerButtonPressWallEnvV2(SawyerXYZEnv):
             tcp_open,
             obj_to_target,
             near_button,
-            button_pressed
+            button_pressed,
+            success
         ) = self.compute_reward(action, obs)
 
         info = {
-            'success': float(obj_to_target <= 0.03),
+            'success': success,
             'near_object': float(tcp_to_obj <= 0.05),
             'grasp_success': float(tcp_open > 0),
             'grasp_reward': near_button,
@@ -137,6 +138,10 @@ class SawyerButtonPressWallEnvV2(SawyerXYZEnv):
             reward = 2
             reward += 2 * (1 + obs[3])
             reward += 4 * button_pressed ** 2
+        
+        success = obj_to_target <= 0.01
+        if success:
+            reward = 10
 
         return (
             reward,
@@ -144,5 +149,6 @@ class SawyerButtonPressWallEnvV2(SawyerXYZEnv):
             obs[3],
             obj_to_target,
             near_button,
-            button_pressed
+            button_pressed,
+            success
         )

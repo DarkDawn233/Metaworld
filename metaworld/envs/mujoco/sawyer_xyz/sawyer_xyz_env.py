@@ -150,6 +150,8 @@ class SawyerXYZEnv(SawyerMocapBase, metaclass=abc.ABCMeta):
         # very first observation)
         self._prev_obs = self._get_curr_obs_combined_no_goal()
 
+        self.last_reward = 0
+
     def _set_task_inner(self):
         # Doesn't absorb "extra" kwargs, to ensure nothing's missed.
         pass
@@ -438,7 +440,10 @@ class SawyerXYZEnv(SawyerMocapBase, metaclass=abc.ABCMeta):
             return self._last_stable_obs
 
         reward, info = self.evaluate_state(self._last_stable_obs, action)
-        return self._last_stable_obs, reward, False, info
+        done = bool(info['success'])
+        rew = reward - self.last_reward
+        self.last_reward = reward
+        return self._last_stable_obs, rew, done, info
 
     def evaluate_state(self, obs, action):
         """Does the heavy-lifting for `step()` -- namely, calculating reward
@@ -457,7 +462,9 @@ class SawyerXYZEnv(SawyerMocapBase, metaclass=abc.ABCMeta):
 
     def reset(self):
         self.curr_path_length = 0
-        return super().reset()
+        obs = super().reset()
+        self.last_reward, _ = self.evaluate_state(obs, [0., 0., 0., 0.])
+        return obs
 
     def _reset_hand(self, steps=50):
         for _ in range(steps):

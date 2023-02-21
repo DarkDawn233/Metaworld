@@ -69,3 +69,6 @@ class Policy(abc.ABC):
             np.ndarray: Array (usually 4 elements) representing the action to take
         """
         pass
+    
+    def reset(self):
+        pass

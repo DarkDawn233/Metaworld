@@ -50,11 +50,12 @@ class SawyerButtonPressTopdownWallEnvV2(SawyerXYZEnv):
             tcp_open,
             obj_to_target,
             near_button,
-            button_pressed
+            button_pressed,
+            success
         ) = self.compute_reward(action, obs)
 
         info = {
-            'success': float(obj_to_target <= 0.02),
+            'success': success,
             'near_object': float(tcp_to_obj <= 0.05),
             'grasp_success': float(tcp_open > 0),
             'grasp_reward': near_button,
@@ -129,6 +130,10 @@ class SawyerButtonPressTopdownWallEnvV2(SawyerXYZEnv):
         reward = 5 * reward_utils.hamacher_product(tcp_closed, near_button)
         if tcp_to_obj <= 0.03:
             reward += 5 * button_pressed
+        
+        success = obj_to_target <= 0.01
+        if success:
+            reward = 10
 
         return (
             reward,
@@ -136,5 +141,6 @@ class SawyerButtonPressTopdownWallEnvV2(SawyerXYZEnv):
             obs[3],
             obj_to_target,
             near_button,
-            button_pressed
+            button_pressed,
+            success
         )

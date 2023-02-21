@@ -44,12 +44,16 @@ class SawyerBasketballEnvV2(SawyerXYZEnv):
             np.array(goal_high) + np.array([0, -0.083, 0.2501])
         )
 
+        self.success_to_target = False
+        
+
     @property
     def model_name(self):
         return full_v2_path_for('sawyer_xyz/sawyer_basketball.xml')
 
     @_assert_task_is_set
     def evaluate_state(self, obs, action):
+        # print("obs:", obs)
         obj = obs[4:7]
 
         (
@@ -58,11 +62,12 @@ class SawyerBasketballEnvV2(SawyerXYZEnv):
             tcp_open,
             obj_to_target,
             grasp_reward,
-            in_place_reward
+            in_place_reward,
+            success,
         ) = self.compute_reward(action, obs)
 
         info = {
-            'success': float(obj_to_target <= self.TARGET_RADIUS),
+            'success': success,
             'near_object': float(tcp_to_obj <= 0.05),
             'grasp_success': float(
                 (tcp_open > 0) and
@@ -75,6 +80,16 @@ class SawyerBasketballEnvV2(SawyerXYZEnv):
         }
 
         return reward, info
+    
+    def _get_success(self, obs, obj_to_target):
+        if obj_to_target <= self.TARGET_RADIUS:
+            self.success_to_target = True
+        if self.success_to_target:
+            obj = obs[4:7]
+            if obj[2] < 0.25:
+                return True
+        return False
+        
 
     def _get_id_main_object(self):
         return self.unwrapped.model.geom_name2id('objGeom')
@@ -86,6 +101,8 @@ class SawyerBasketballEnvV2(SawyerXYZEnv):
         return self.sim.data.get_body_xquat('bsktball')
 
     def reset_model(self):
+        self.success_to_target = False
+
         self._reset_hand()
         self.prev_obs = self._get_curr_obs_combined_no_goal()
 
@@ -145,13 +162,19 @@ class SawyerBasketballEnvV2(SawyerXYZEnv):
         if tcp_to_obj < 0.035 and tcp_opened > 0 and \
                 obj[2] - 0.01 > self.obj_init_pos[2]:
             reward += 1. + 5. * in_place
-        if target_to_obj < self.TARGET_RADIUS:
+        success = self._get_success(obs, target_to_obj)
+        if self.success_to_target:
+            reward = 7.
+        if success:
             reward = 10.
+        # if target_to_obj < self.TARGET_RADIUS:
+        #     reward = 10.
         return (
             reward,
             tcp_to_obj,
             tcp_opened,
             target_to_obj,
             object_grasped,
-            in_place
+            in_place,
+            success
         )

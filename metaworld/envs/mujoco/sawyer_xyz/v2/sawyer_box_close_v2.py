@@ -14,8 +14,8 @@ class SawyerBoxCloseEnvV2(SawyerXYZEnv):
         hand_high = (0.5, 1, 0.5)
         obj_low = (-0.05, 0.5, 0.02)
         obj_high = (0.05, 0.55, 0.02)
-        goal_low = (-0.1, 0.7, 0.133)
-        goal_high = (0.1, 0.8, 0.133)
+        goal_low = (-0.1, 0.7, 0.075)
+        goal_high = (0.1, 0.8, 0.075)
 
         super().__init__(
             self.model_name,
@@ -28,7 +28,7 @@ class SawyerBoxCloseEnvV2(SawyerXYZEnv):
             'obj_init_pos': np.array([0, 0.55, 0.02], dtype=np.float32),
             'hand_init_pos': np.array((0, 0.6, 0.2), dtype=np.float32),
         }
-        self.goal = np.array([0.0, 0.75, 0.133])
+        self.goal = np.array([0.0, 0.75, 0.075])
         self.obj_init_pos = self.init_config['obj_init_pos']
         self.obj_init_angle = self.init_config['obj_init_angle']
         self.hand_init_pos = self.init_config['hand_init_pos']
@@ -165,7 +165,12 @@ class SawyerBoxCloseEnvV2(SawyerXYZEnv):
         ))
 
         # Override reward on success
-        success = np.linalg.norm(obs[4:7] - self._target_pos) < 0.08
+        # success = np.linalg.norm(obs[4:7] - self._target_pos) < 0.08
+        # print("object:", obs[4:7])
+        # print("target:", self._target_pos, np.linalg.norm(obs[4:6] - self._target_pos[:2]))
+        # success = np.linalg.norm(obs[4:7] - self._target_pos) < 0.08
+        success = np.linalg.norm(obs[4:6] - self._target_pos[:2]) < 0.01 and abs(obs[6] - self._target_pos[2]) < 0.005
+
         if success:
             reward = 10.0
 
