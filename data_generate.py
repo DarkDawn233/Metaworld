@@ -4,6 +4,8 @@ from PIL import Image
 import os
 from pathlib import Path
 import h5py
+import threading
+import multiprocessing
 
 # CAMERA_LIST = ["corner3", "corner", "corner2", "topview", "behindGripper"]
 CAMERA_LIST = ["corner3", "corner", "topview"]
@@ -39,6 +41,7 @@ def run_demo(task_name, seed=0):
         'obs': [],
         'action': [],
         'reward': [],
+        'src_reward': [],
         'done': [],
         'img': {}
     }
@@ -55,7 +58,7 @@ def run_demo(task_name, seed=0):
     final_done = 0
     step = 0
 
-    while final_done < 1 and step < 300:
+    while final_done < 1 and step < 400:
         a = policy.get_action(obs)
         a = np.clip(a, -1, 1)
         demo['action'].append(a)
@@ -67,6 +70,7 @@ def run_demo(task_name, seed=0):
         # done = info['success']
         demo['obs'].append(obs)
         demo['reward'].append(reward)
+        demo['src_reward'].append(env.last_reward)
         demo['done'].append(done)
 
         img_dict = get_img(env)
@@ -74,7 +78,7 @@ def run_demo(task_name, seed=0):
             demo['img'][k].append(v)
 
         step += 1
-        print("step:", step, "reward:", reward, env.last_reward, "a:", a)
+        # print("step:", step, "reward:", reward, env.last_reward, "a:", a)
     
     print(task_name, seed, "done", done, step)
     
@@ -118,15 +122,43 @@ def test_env(task_name):
             fail_list.append(seed)
     print("Fail list:", fail_list)
 
+def thread_generate_data(t_id, task_name, begin_seed, end_seed):
+    root_path = Path(__file__).parent / 'data' / task_name
+    root_path.mkdir(exist_ok=True, parents=True)
+    success_file_path = root_path / ("fail_" + str(t_id) + ".txt") 
+    f = open(success_file_path, "a")
+    for seed in range(begin_seed, end_seed):
+        demo, success = run_demo(task_name=task_name, seed=seed)
+        if not success:
+            f.write(str(seed) + "\n")
+        else:
+            write_h5(task_name=task_name, seed=seed, demo=demo)
+    f.close()
+
+def generate_data(task_name, thread_num=10):
+    thread_list = []
+    for t_id in range(thread_num):
+        begin_seed = t_id * 2
+        end_seed = (t_id + 1) * 2
+        # t = threading.Thread(target=thread_generate_data, args=(t_id, task_name, begin_seed, end_seed))
+        t = multiprocessing.Process(target=thread_generate_data, args=(t_id, task_name, begin_seed, end_seed))
+        t.start()
+        thread_list.append(t)
+    for t in thread_list:
+        t.join()
+
 if __name__ == "__main__":
     # Fail list: [12, 29, 45, 96]
-    task_name = "coffee-pull"
-    seed = 0
-    demo, _ = run_demo(task_name=task_name, seed=seed)
+    task_name = "assembly"
+    # seed = 0
+    # demo, _ = run_demo(task_name=task_name, seed=seed)
 
-    show_demo(task_name=task_name, seed=seed, demo=demo)
+    # show_demo(task_name=task_name, seed=seed, demo=demo)
 
     # write_h5(task_name=task_name, seed=seed, demo=demo)
     # read_h5(task_name=task_name, seed=seed)
 
     # test_env(task_name)
+    generate_data(task_name=task_name)
+
+    

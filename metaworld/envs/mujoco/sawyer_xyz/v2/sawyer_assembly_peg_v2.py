@@ -140,7 +140,7 @@ class SawyerNutAssemblyEnvV2(SawyerXYZEnv):
         aligned = radius < 0.02
         hooked = pos_error[2] > 0.07
         success = aligned and hooked
-        print(success, "pos_error:", pos_error)
+        # print(success, "pos_error:", pos_error)
 
         # Target height is a 3D funnel centered on the peg.
         # use the success flag to widen the bottleneck once the agent
