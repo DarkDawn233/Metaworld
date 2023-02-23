@@ -126,20 +126,19 @@ def thread_generate_data(t_id, task_name, begin_seed, end_seed):
     root_path = Path(__file__).parent / 'data' / task_name
     root_path.mkdir(exist_ok=True, parents=True)
     success_file_path = root_path / ("fail_" + str(t_id) + ".txt") 
-    f = open(success_file_path, "a")
     for seed in range(begin_seed, end_seed):
         demo, success = run_demo(task_name=task_name, seed=seed)
         if not success:
-            f.write(str(seed) + "\n")
+            with open(success_file_path, "a") as f:
+                f.write(str(seed) + "\n")
         else:
             write_h5(task_name=task_name, seed=seed, demo=demo)
-    f.close()
 
 def generate_data(task_name, thread_num=10):
     thread_list = []
     for t_id in range(thread_num):
-        begin_seed = t_id * 2
-        end_seed = (t_id + 1) * 2
+        begin_seed = t_id * 200
+        end_seed = (t_id + 1) * 200
         # t = threading.Thread(target=thread_generate_data, args=(t_id, task_name, begin_seed, end_seed))
         t = multiprocessing.Process(target=thread_generate_data, args=(t_id, task_name, begin_seed, end_seed))
         t.start()
@@ -148,7 +147,7 @@ def generate_data(task_name, thread_num=10):
         t.join()
 
 if __name__ == "__main__":
-    # Fail list: [12, 29, 45, 96]
+    os.environ['CUDA_VISIBLE_DEVICES']='1'
     task_name = "assembly"
     # seed = 0
     # demo, _ = run_demo(task_name=task_name, seed=seed)
