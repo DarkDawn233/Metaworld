@@ -7,6 +7,7 @@ from metaworld.envs.mujoco.sawyer_xyz.sawyer_xyz_env import SawyerXYZEnv, _asser
 
 
 class SawyerHandlePullSideEnvV2(SawyerXYZEnv):
+    TARGET_RADIUS = 0.05
 
     def __init__(self):
 
@@ -56,7 +57,7 @@ class SawyerHandlePullSideEnvV2(SawyerXYZEnv):
         ) = self.compute_reward(action, obs)
 
         info = {
-            'success': float(obj_to_target <= 0.08),
+            'success': float(obj_to_target <= self.TARGET_RADIUS),
             'near_object': float(tcp_to_obj <= 0.05),
             'grasp_success': float(
                 (tcp_open > 0) and
@@ -140,7 +141,7 @@ class SawyerHandlePullSideEnvV2(SawyerXYZEnv):
         if tcp_to_obj < 0.035 and tcp_opened > 0 and \
                 obj[2] - 0.01 > self.obj_init_pos[2]:
             reward += 1. + 5. * in_place
-        if target_to_obj < self.TARGET_RADIUS:
+        if target_to_obj <= self.TARGET_RADIUS:
             reward = 10.
         return (
             reward,

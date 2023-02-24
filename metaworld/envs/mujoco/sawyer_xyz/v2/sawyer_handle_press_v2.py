@@ -7,7 +7,7 @@ from metaworld.envs.mujoco.sawyer_xyz.sawyer_xyz_env import SawyerXYZEnv, _asser
 
 
 class SawyerHandlePressEnvV2(SawyerXYZEnv):
-    TARGET_RADIUS=0.02
+    TARGET_RADIUS=0.01
 
     def __init__(self):
 

@@ -52,11 +52,12 @@ class SawyerDoorLockEnvV2(SawyerXYZEnv):
             tcp_open,
             obj_to_target,
             near_button,
-            button_pressed
+            button_pressed,
+            success
         ) = self.compute_reward(action, obs)
 
         info = {
-            'success': float(obj_to_target <= 0.02),
+            'success': success,
             'near_object': float(tcp_to_obj <= 0.05),
             'grasp_success': float(tcp_open > 0),
             'grasp_reward': near_button,
@@ -127,11 +128,16 @@ class SawyerDoorLockEnvV2(SawyerXYZEnv):
         reward = 2 * reward_utils.hamacher_product(tcp_opened, near_lock)
         reward += 8 * lock_pressed
 
+        success = obj_to_target <= 0.02
+        if success:
+            reward = 10.
+
         return (
             reward,
             tcp_to_obj,
             obs[3],
             obj_to_target,
             near_lock,
-            lock_pressed
+            lock_pressed,
+            success
         )

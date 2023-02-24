@@ -42,7 +42,7 @@ class SawyerCoffeePushV2Policy(Policy):
         elif abs(pos_curr[2] - pos_mug[2]) > 0.02:
             return pos_mug
         else:
-            return np.array([pos_goal[0], pos_goal[1], .1])
+            return np.array([pos_goal[0]-pos_mug[0]+pos_curr[0], pos_goal[1]-pos_mug[1]+pos_curr[1], .1])
 
     @staticmethod
     def _grab_effort(o_d):

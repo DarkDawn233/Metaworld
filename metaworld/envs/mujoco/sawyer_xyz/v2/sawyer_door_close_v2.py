@@ -47,11 +47,11 @@ class SawyerDoorCloseEnvV2(SawyerDoorEnvV2):
 
     @_assert_task_is_set
     def evaluate_state(self, obs, action):
-        reward, obj_to_target, in_place = self.compute_reward(action, obs)
+        reward, obj_to_target, in_place, success = self.compute_reward(action, obs)
         info = {
             'obj_to_target': obj_to_target,
             'in_place_reward': in_place,
-            'success': float(obj_to_target <= 0.08),
+            'success': success,
             'near_object': 0.,
             'grasp_success': 1.,
             'grasp_reward': 1.,
@@ -60,14 +60,17 @@ class SawyerDoorCloseEnvV2(SawyerDoorEnvV2):
         return reward, info
 
     def compute_reward(self, actions, obs):
-        _TARGET_RADIUS = 0.05
+        _TARGET_RADIUS = 0.015
         tcp = self.tcp_center
         obj = obs[4:7]
         target = self._target_pos
+        # print("obj:", obj)
+        # print("tar:", target)
 
         tcp_to_target = np.linalg.norm(tcp - target)
         tcp_to_obj = np.linalg.norm(tcp - obj)
         obj_to_target = np.linalg.norm(obj - target)
+        # print("obj_to_target:", obj_to_target)
 
         in_place_margin = np.linalg.norm(self.obj_init_pos - target)
         in_place = reward_utils.tolerance(obj_to_target,
@@ -83,7 +86,8 @@ class SawyerDoorCloseEnvV2(SawyerDoorEnvV2):
 
         reward = 3 * hand_in_place + 6 * in_place
 
-        if obj_to_target < _TARGET_RADIUS:
+        success = obj_to_target < _TARGET_RADIUS
+        if success:
             reward = 10
 
-        return [reward, obj_to_target, hand_in_place]
+        return [reward, obj_to_target, hand_in_place, success]

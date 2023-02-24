@@ -56,7 +56,7 @@ class SawyerDoorEnvV2(SawyerXYZEnv):
             reward_success,
         ) = self.compute_reward(action, obs)
 
-        success = float(abs(obs[4] - self._target_pos[0]) <= 0.08)
+        success = float(abs(obs[4] - self._target_pos[0]) <= 0.02)
 
         info = {
             'success': success,
@@ -162,7 +162,7 @@ class SawyerDoorEnvV2(SawyerXYZEnv):
         ))
 
         # Override reward on success flag
-        if abs(obs[4] - self._target_pos[0]) <= 0.08:
+        if abs(obs[4] - self._target_pos[0]) <= 0.02:
             reward = 10.0
 
         return (

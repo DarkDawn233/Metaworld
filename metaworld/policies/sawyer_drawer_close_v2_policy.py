@@ -43,7 +43,7 @@ class SawyerDrawerCloseV2Policy(Policy):
                 # move to front edge of drawer handle, but stay high in Z
                 return pos_drwr + np.array([0., -0.075, 0.23])
         # drop down to touch drawer handle
-        elif abs(pos_curr[2] - pos_drwr[2]) > 0.04:
+        elif abs(pos_curr[2] - pos_drwr[2]) > 0.01:
             return pos_drwr + np.array([0., -0.075, 0.])
         # push toward drawer handle's centroid
         else:

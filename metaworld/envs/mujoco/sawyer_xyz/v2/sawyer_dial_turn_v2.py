@@ -49,10 +49,11 @@ class SawyerDialTurnEnvV2(SawyerXYZEnv):
          _,
          target_to_obj,
          object_grasped,
-         in_place) = self.compute_reward(action, obs)
+         in_place,
+         success) = self.compute_reward(action, obs)
 
         info = {
-            'success': float(target_to_obj <= self.TARGET_RADIUS),
+            'success': success,
             'near_object': float(tcp_to_obj <= 0.01),
             'grasp_success': 1.,
             'grasp_reward': object_grasped,
@@ -132,10 +133,14 @@ class SawyerDialTurnEnvV2(SawyerXYZEnv):
         object_grasped = reach
 
         reward = 10 * reward_utils.hamacher_product(reach, in_place)
+        success = target_to_obj <= self.TARGET_RADIUS
+        if success:
+            reward = 10
 
         return (reward,
                tcp_to_obj,
                tcp_opened,
                target_to_obj,
                object_grasped,
-               in_place)
+               in_place,
+               success)

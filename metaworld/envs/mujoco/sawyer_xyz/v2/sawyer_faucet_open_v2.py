@@ -15,7 +15,7 @@ class SawyerFaucetOpenEnvV2(SawyerXYZEnv):
         obj_low = (-0.05, 0.8, 0.0)
         obj_high = (0.05, 0.85, 0.0)
         self._handle_length = 0.175
-        self._target_radius = 0.07
+        self._target_radius = 0.05
 
         super().__init__(
             self.model_name,
@@ -49,7 +49,7 @@ class SawyerFaucetOpenEnvV2(SawyerXYZEnv):
          in_place) = self.compute_reward(action, obs)
 
         info = {
-            'success': float(target_to_obj <= 0.07),
+            'success': float(target_to_obj <= 0.05),
             'near_object': float(tcp_to_obj <= 0.01),
             'grasp_success': 1.,
             'grasp_reward': object_grasped,

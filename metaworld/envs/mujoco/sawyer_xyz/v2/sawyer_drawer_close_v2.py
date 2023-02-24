@@ -7,7 +7,7 @@ from metaworld.envs.mujoco.sawyer_xyz.sawyer_xyz_env import SawyerXYZEnv, _asser
 
 
 class SawyerDrawerCloseEnvV2(SawyerXYZEnv):
-    _TARGET_RADIUS = 0.04
+    _TARGET_RADIUS = 0.01
     def __init__(self):
 
         hand_low = (-0.5, 0.40, 0.05)
@@ -56,7 +56,7 @@ class SawyerDrawerCloseEnvV2(SawyerXYZEnv):
         in_place) = self.compute_reward(action, obs)
 
         info = {
-            'success': float(target_to_obj <= self.TARGET_RADIUS + 0.015),
+            'success': float(target_to_obj <= self.TARGET_RADIUS+0.005),
             'near_object': float(tcp_to_obj <= 0.01),
             'grasp_success': 1.,
             'grasp_reward': object_grasped,
@@ -131,7 +131,8 @@ class SawyerDrawerCloseEnvV2(SawyerXYZEnv):
         object_grasped = reach
 
         reward = reward_utils.hamacher_product(reach, in_place)
-        if target_to_obj <= self.TARGET_RADIUS + 0.015:
+        reward = in_place
+        if target_to_obj <= self.TARGET_RADIUS+0.005:
             reward = 1.
 
         reward *= 10
