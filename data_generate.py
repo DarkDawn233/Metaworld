@@ -146,9 +146,23 @@ def generate_data(task_name, thread_num=10):
     for t in thread_list:
         t.join()
 
+def stat_success(task_name, thread_num=10):
+    root_path = Path(__file__).parent / 'data' / task_name
+    cnt = 0
+    for t_id in range(thread_num):
+        success_file_path = root_path / ("fail_" + str(t_id) + ".txt")
+        if success_file_path.exists():
+            with open(success_file_path, "r") as f:
+                cnt += len(f.readlines())
+    rate = (2000-cnt)/2000
+    print("success_rate:", rate) 
+    success_rate_path = root_path / "success_rate.txt"
+    with open(success_rate_path, "w") as f:
+        f.write("success rate: " + str(rate))
+
 if __name__ == "__main__":
     os.environ['CUDA_VISIBLE_DEVICES']='1'
-    task_name = "assembly"
+    # task_name = "bin-picking"
     # seed = 0
     # demo, _ = run_demo(task_name=task_name, seed=seed)
 
@@ -158,6 +172,17 @@ if __name__ == "__main__":
     # read_h5(task_name=task_name, seed=seed)
 
     # test_env(task_name)
-    generate_data(task_name=task_name)
+    task_name_list = [
+        "box-close",
+        "button-press-topdown",
+        "button-press-topdown-wall",
+        "button-press",
+        "button-press-wall",
+        "coffee-button",
+        "coffee-pull"
+        ]
+    for task_name in task_name_list:
+        generate_data(task_name=task_name)
+        stat_success(task_name=task_name)
 
     
