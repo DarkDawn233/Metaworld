@@ -6,6 +6,9 @@ from metaworld.policies.policy import Policy, move
 
 class SawyerButtonPressWallV2Policy(Policy):
 
+    def __init__(self):
+        self.grab_done = False
+
     @staticmethod
     def _parse_obs(obs):
         return {
@@ -14,6 +17,9 @@ class SawyerButtonPressWallV2Policy(Policy):
             'button_pos': obs[4:7],
             'unused_info': obs[7:],
         }
+    
+    def reset(self):
+        self.grab_done = False
 
     def get_action(self, obs):
         o_d = self._parse_obs(obs)
@@ -24,32 +30,34 @@ class SawyerButtonPressWallV2Policy(Policy):
         })
 
         action['delta_pos'] = move(o_d['hand_pos'], to_xyz=self._desired_pos(o_d), p=15.)
-        action['grab_effort'] = self._grab_effort(o_d)
+        action['grab_effort'], self.grab_done = self._grab_effort(o_d, self.grab_done)
 
         return action.array
 
     @staticmethod
     def _desired_pos(o_d):
         pos_curr = o_d['hand_pos']
-        pos_button = o_d['button_pos'] + np.array([.0, .0, .04])
+        pos_button = o_d['button_pos'] + np.array([.0, .0, .02])
 
         if abs(pos_curr[0] - pos_button[0]) > 0.02:
             return np.array([pos_button[0], pos_curr[1], .3])
-        elif pos_button[1] - pos_curr[1] > 0.09:
+        elif pos_button[1] - pos_curr[1] > 0.05:
             return np.array([pos_button[0], pos_button[1], .3])
         elif abs(pos_curr[2] - pos_button[2]) > 0.02:
-            return pos_button + np.array([.0, -.05, .0])
+            return pos_button + np.array([.0, -.04, .0])
         else:
             return pos_button + np.array([.0, -.02, .0])
 
     @staticmethod
-    def _grab_effort(o_d):
+    def _grab_effort(o_d, grab_done):
         pos_curr = o_d['hand_pos']
-        pos_button = o_d['button_pos'] + np.array([.0, .0, .04])
+        pos_button = o_d['button_pos'] + np.array([.0, .0, .02])
 
+        if grab_done:
+            return -1., True
         if abs(pos_curr[0] - pos_button[0]) > 0.02 or \
                 pos_button[1] - pos_curr[1] > 0.09 or \
                 abs(pos_curr[2] - pos_button[2]) > 0.02:
-            return 1.
+            return 1., False
         else:
-            return -1.
+            return -1., True

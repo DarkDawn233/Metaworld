@@ -139,7 +139,7 @@ class SawyerButtonPressWallEnvV2(SawyerXYZEnv):
             reward += 2 * (1 + obs[3])
             reward += 4 * button_pressed ** 2
         
-        success = obj_to_target <= 0.01
+        success = obj_to_target <= 0.025
         if success:
             reward = 10
 

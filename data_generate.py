@@ -33,7 +33,7 @@ def show_demo(task_name, seed, demo):
         for i, img in enumerate(img_list):
             save_jpeg(img, root_path / (str(i)+".jpeg"))
 
-def run_demo(task_name, seed=0):
+def run_demo(task_name, seed=0, debug=False):
     env = TASK_DICK[task_name]['env'](seed=seed)
     policy = TASK_DICK[task_name]['policy']()
 
@@ -78,7 +78,8 @@ def run_demo(task_name, seed=0):
             demo['img'][k].append(v)
 
         step += 1
-        # print("step:", step, "reward:", reward, env.last_reward, "a:", a)
+        if debug:
+            print("step:", step, "reward:", reward, env.last_reward, "a:", a)
     
     print(task_name, seed, "done", done, step)
     
@@ -162,27 +163,26 @@ def stat_success(task_name, thread_num=10):
 
 if __name__ == "__main__":
     os.environ['CUDA_VISIBLE_DEVICES']='1'
-    # task_name = "bin-picking"
-    # seed = 0
-    # demo, _ = run_demo(task_name=task_name, seed=seed)
-
-    # show_demo(task_name=task_name, seed=seed, demo=demo)
+    task_name = "button-press-wall"
+    seed = 2
+    demo, _ = run_demo(task_name=task_name, seed=seed, debug=True)
+    show_demo(task_name=task_name, seed=seed, demo=demo)
 
     # write_h5(task_name=task_name, seed=seed, demo=demo)
     # read_h5(task_name=task_name, seed=seed)
 
-    # test_env(task_name)
-    task_name_list = [
-        "box-close",
-        "button-press-topdown",
-        "button-press-topdown-wall",
-        "button-press",
-        "button-press-wall",
-        "coffee-button",
-        "coffee-pull"
-        ]
-    for task_name in task_name_list:
-        generate_data(task_name=task_name)
-        stat_success(task_name=task_name)
+    test_env(task_name)
+    # task_name_list = [
+    #     "box-close",
+    #     "button-press-topdown",
+    #     "button-press-topdown-wall",
+    #     "button-press",
+    #     "button-press-wall",
+    #     "coffee-button",
+    #     "coffee-pull"
+    #     ]
+    # for task_name in task_name_list:
+    #     generate_data(task_name=task_name)
+    #     stat_success(task_name=task_name)
 
     
