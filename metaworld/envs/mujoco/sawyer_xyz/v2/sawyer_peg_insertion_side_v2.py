@@ -8,7 +8,7 @@ from scipy.spatial.transform import Rotation
 
 
 class SawyerPegInsertionSideEnvV2(SawyerXYZEnv):
-    TARGET_RADIUS = 0.07
+    TARGET_RADIUS = 0.05
     """
     Motivation for V2:
         V1 was difficult to solve because the observation didn't say where
@@ -73,7 +73,7 @@ class SawyerPegInsertionSideEnvV2(SawyerXYZEnv):
         reward, tcp_to_obj, tcp_open, obj_to_target, grasp_reward, in_place_reward, collision_box_front, ip_orig= (
             self.compute_reward(action, obs))
         grasp_success = float(tcp_to_obj < 0.02 and (tcp_open > 0) and (obj[2] - 0.01 > self.obj_init_pos[2]))
-        success = float(obj_to_target <= 0.07)
+        success = float(obj_to_target <= self.TARGET_RADIUS)
         near_object = float(tcp_to_obj <= 0.03)
 
         info = {
@@ -167,7 +167,7 @@ class SawyerPegInsertionSideEnvV2(SawyerXYZEnv):
         if tcp_to_obj < 0.08 and (tcp_opened > 0) and (obj[2] - 0.01 > self.obj_init_pos[2]):
             reward += 1. + 5 * in_place
 
-        if obj_to_target <= 0.07:
+        if obj_to_target <= self.TARGET_RADIUS:
             reward = 10.
 
         return [reward, tcp_to_obj, tcp_opened, obj_to_target, object_grasped, in_place, collision_boxes, ip_orig]
