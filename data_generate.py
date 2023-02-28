@@ -85,6 +85,18 @@ def run_demo(task_name, seed=0, debug=False):
     
     return demo, done
 
+def cal_return_to_go(demo):
+    reward = demo['reward']
+    done = demo['done']
+    returns = []
+    ret = 0.
+    for r, d in zip(reward, done):
+        ret = ret * (1 - d) + r
+        returns.append(ret)
+    returns.reverse()
+    demo['return'] = returns
+    return demo
+
 def write_h5(task_name, seed, demo):
     root_path = Path(__file__).parent / 'data' / task_name
     root_path.mkdir(exist_ok=True, parents=True)
@@ -133,6 +145,7 @@ def thread_generate_data(t_id, task_name, begin_seed, end_seed):
             with open(success_file_path, "a") as f:
                 f.write(str(seed) + "\n")
         else:
+            demo = cal_return_to_go(demo)
             write_h5(task_name=task_name, seed=seed, demo=demo)
 
 def generate_data(task_name, thread_num=10):
@@ -166,12 +179,13 @@ if __name__ == "__main__":
     task_name = "button-press-wall"
     seed = 2
     demo, _ = run_demo(task_name=task_name, seed=seed, debug=True)
-    show_demo(task_name=task_name, seed=seed, demo=demo)
+    demo = cal_return_to_go(demo)
+    # show_demo(task_name=task_name, seed=seed, demo=demo)
 
-    # write_h5(task_name=task_name, seed=seed, demo=demo)
-    # read_h5(task_name=task_name, seed=seed)
+    write_h5(task_name=task_name, seed=seed, demo=demo)
+    read_h5(task_name=task_name, seed=seed)
 
-    test_env(task_name)
+    # test_env(task_name)
     # task_name_list = [
     #     "box-close",
     #     "button-press-topdown",
