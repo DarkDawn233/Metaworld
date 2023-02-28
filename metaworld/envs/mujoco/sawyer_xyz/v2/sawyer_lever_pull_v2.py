@@ -19,7 +19,7 @@ class SawyerLeverPullEnvV2(SawyerXYZEnv):
         - (6/23/20) In `reset_model`, changed `final_pos[2] -= .17` to `+= .17`
             This ensures that the target point is above the table.
     """
-    LEVER_RADIUS = 0.2
+    LEVER_RADIUS = 0.1
 
     def __init__(self):
 
@@ -64,11 +64,12 @@ class SawyerLeverPullEnvV2(SawyerXYZEnv):
             shoulder_to_lever,
             ready_to_lift,
             lever_error,
-            lever_engagement
+            lever_engagement,
+            success
         ) = self.compute_reward(action, obs)
 
         info = {
-            'success': float(lever_error <= np.pi / 24),
+            'success': float(success),
             'near_object': float(shoulder_to_lever < 0.03),
             'grasp_success': float(ready_to_lift > 0.9),
             'grasp_reward': ready_to_lift,
@@ -156,12 +157,16 @@ class SawyerLeverPullEnvV2(SawyerXYZEnv):
                                     margin=in_place_margin,
                                     sigmoid='long_tail',)
 
-        # reward = 2.0 * ready_to_lift + 8.0 * lever_engagement
-        reward = 10.0 * reward_utils.hamacher_product(ready_to_lift, in_place)
+        reward = 2.0 * ready_to_lift + 8.0 * lever_engagement
+        # reward = 10.0 * reward_utils.hamacher_product(ready_to_lift, in_place)
+        success = lever_error <= np.pi / 24
+        if success:
+            reward = 10.
         return (
             reward,
             np.linalg.norm(shoulder_to_lever),
             ready_to_lift,
             lever_error,
-            lever_engagement
+            lever_engagement,
+            success
         )

@@ -34,6 +34,8 @@ class SawyerLeverPullV2Policy(Policy):
         pos_curr = o_d['hand_pos']
         pos_lever = o_d['lever_pos'] + np.array([.0, -.055, .0])
 
+        if abs(pos_curr[0] - pos_lever[0]) > 0.02:
+            return [pos_lever[0], pos_curr[1], pos_curr[2]]
         if np.linalg.norm(pos_curr[:2] - pos_lever[:2]) > 0.02:
             return pos_lever + np.array([0., 0., -0.1])
         elif abs(pos_curr[2] - pos_lever[2]) > 0.02:
