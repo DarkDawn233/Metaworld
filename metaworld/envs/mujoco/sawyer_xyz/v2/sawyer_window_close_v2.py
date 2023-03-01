@@ -17,7 +17,7 @@ class SawyerWindowCloseEnvV2(SawyerXYZEnv):
             (for consistency with other environments)
         - (6/15/20) Increased max_path_length from 150 to 200
     """
-    TARGET_RADIUS = 0.05
+    TARGET_RADIUS = 0.02
     def __init__(self):
 
         liftThresh = 0.02
@@ -141,6 +141,8 @@ class SawyerWindowCloseEnvV2(SawyerXYZEnv):
         object_grasped = reach
 
         reward = 10 * reward_utils.hamacher_product(reach, in_place)
+        if target_to_obj < self.TARGET_RADIUS:
+            reward = 10.
         
         return (reward,
                tcp_to_obj,
