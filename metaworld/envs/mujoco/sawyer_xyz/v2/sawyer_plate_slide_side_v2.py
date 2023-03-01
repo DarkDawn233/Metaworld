@@ -9,6 +9,7 @@ from metaworld.envs.mujoco.sawyer_xyz.sawyer_xyz_env import SawyerXYZEnv, _asser
 
 class SawyerPlateSlideSideEnvV2(SawyerXYZEnv):
 
+    TARGET_RADIUS = 0.05
     def __init__(self):
 
         goal_low = (-0.3, 0.54, 0.)
@@ -55,7 +56,7 @@ class SawyerPlateSlideSideEnvV2(SawyerXYZEnv):
             in_place
         ) = self.compute_reward(action, obs)
 
-        success = float(obj_to_target <= 0.07)
+        success = float(obj_to_target <= self.TARGET_RADIUS)
         near_object = float(tcp_to_obj <= 0.03)
 
         info = {
@@ -98,7 +99,7 @@ class SawyerPlateSlideSideEnvV2(SawyerXYZEnv):
         return self._get_obs()
 
     def compute_reward(self, actions, obs):
-        _TARGET_RADIUS = 0.05
+        # _TARGET_RADIUS = 0.05
         tcp = self.tcp_center
         obj = obs[4:7]
         tcp_opened = obs[3]
@@ -107,15 +108,15 @@ class SawyerPlateSlideSideEnvV2(SawyerXYZEnv):
         obj_to_target = np.linalg.norm(obj - target)
         in_place_margin = np.linalg.norm(self.obj_init_pos - target)
         in_place = reward_utils.tolerance(obj_to_target,
-                                    bounds=(0, _TARGET_RADIUS),
-                                    margin=in_place_margin - _TARGET_RADIUS,
+                                    bounds=(0, self.TARGET_RADIUS),
+                                    margin=in_place_margin - self.TARGET_RADIUS,
                                     sigmoid='long_tail',)
 
         tcp_to_obj = np.linalg.norm(tcp - obj)
         obj_grasped_margin = np.linalg.norm(self.init_tcp - self.obj_init_pos)
         object_grasped = reward_utils.tolerance(tcp_to_obj,
-                                    bounds=(0, _TARGET_RADIUS),
-                                    margin=obj_grasped_margin - _TARGET_RADIUS,
+                                    bounds=(0, self.TARGET_RADIUS),
+                                    margin=obj_grasped_margin - self.TARGET_RADIUS,
                                     sigmoid='long_tail',)
 
         in_place_and_object_grasped = reward_utils.hamacher_product(object_grasped,
@@ -125,7 +126,7 @@ class SawyerPlateSlideSideEnvV2(SawyerXYZEnv):
         if tcp[2] <= 0.03 and tcp_to_obj < 0.07:
             reward = 2 + (7 * in_place)
 
-        if obj_to_target < _TARGET_RADIUS:
+        if obj_to_target < self.TARGET_RADIUS:
             reward = 10.
         return [
             reward,
