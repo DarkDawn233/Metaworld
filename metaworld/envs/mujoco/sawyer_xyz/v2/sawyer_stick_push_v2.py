@@ -49,7 +49,7 @@ class SawyerStickPushEnvV2(SawyerXYZEnv):
         stick = obs[4:7]
         container = obs[11:14]
         reward, tcp_to_obj, tcp_open, container_to_target, grasp_reward, stick_in_place = self.compute_reward(action, obs)
-        success = float(np.linalg.norm(container - self._target_pos) <= 0.12)
+        success = float(np.linalg.norm(container - self._target_pos) <= 0.05)
         near_object = float(tcp_to_obj <= 0.03)
         grasp_success = float(self.touching_object and (tcp_open > 0) and (stick[2] - 0.01 > self.stick_init_pos[2]))
 
@@ -203,7 +203,7 @@ class SawyerStickPushEnvV2(SawyerXYZEnv):
         return caging_and_gripping
 
     def compute_reward(self, action, obs):
-        _TARGET_RADIUS = 0.12
+        _TARGET_RADIUS = 0.05
         tcp = self.tcp_center
         stick = obs[4:7] + np.array([.015, .0, .0])
         container = obs[11:14]
