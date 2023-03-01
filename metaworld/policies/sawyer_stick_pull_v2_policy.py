@@ -6,6 +6,14 @@ from metaworld.policies.policy import Policy, assert_fully_parsed, move
 
 class SawyerStickPullV2Policy(Policy):
 
+    def __init__(self):
+        self.grab_done = False
+        self.t = 0
+    
+    def reset(self):
+        self.grab_done = False
+        self.t = 0
+
     @staticmethod
     @assert_fully_parsed
     def _parse_obs(obs):
@@ -27,17 +35,31 @@ class SawyerStickPullV2Policy(Policy):
             'grab_pow': 3
         })
 
-        action['delta_pos'] = move(o_d['hand_pos'], to_xyz=self._desired_xyz(o_d), p=25.)
-        action['grab_pow'] = self._grab_pow(o_d)
+        action['delta_pos'] = move(o_d['hand_pos'], to_xyz=self._desired_xyz(o_d, self.grab_done, self.t), p=25.)
+        action['grab_pow'], self.grab_done = self._grab_pow(o_d, self.grab_done)
+        self.t += self.grab_done
 
         return action.array
 
     @staticmethod
-    def _desired_xyz(o_d):
+    def _desired_xyz(o_d, grab_done, t):
         hand_pos = o_d['hand_pos']
         stick_pos = o_d['stick_pos'] + np.array([-.015, .0, .03])
         thermos_pos = o_d['obj_pos'] + np.array([-.015, .0, .03])
         goal_pos = o_d['goal_pos'] + np.array([-.05, .0, .0])
+
+        if grab_done and t < 20:
+            return hand_pos
+        elif grab_done:
+            if abs(stick_pos[0] - thermos_pos[0]) > 0.04:
+                if abs(stick_pos[1] - thermos_pos[1]) > 0.02:
+                    return np.array([stick_pos[0], thermos_pos[1], stick_pos[2]])
+                elif abs(stick_pos[2] - thermos_pos[2]) > 0.02:
+                    return np.array([stick_pos[0], *thermos_pos[1:]])
+                else:
+                    return thermos_pos
+            else:
+                return o_d['goal_pos'] + o_d['hand_pos'] - o_d['obj_pos']
 
         if abs(stick_pos[0] - thermos_pos[0]) > 0.04:
             if np.linalg.norm(hand_pos[:2] - stick_pos[:2]) > 0.02:
@@ -51,14 +73,17 @@ class SawyerStickPullV2Policy(Policy):
             else:
                 return thermos_pos
         else:
-            return goal_pos
+            return o_d['goal_pos'] + o_d['hand_pos'] - o_d['obj_pos']
+            # return goal_pos
 
     @staticmethod
-    def _grab_pow(o_d):
+    def _grab_pow(o_d, grab_done):
         hand_pos = o_d['hand_pos']
         stick_pos = o_d['stick_pos'] + np.array([-.015, .0, .03])
 
-        if np.linalg.norm(hand_pos[:2] - stick_pos[:2]) > 0.02 or abs(hand_pos[2] - stick_pos[2]) > 0.1:
-            return -1.0
+        if grab_done:
+            return 0.7, True
+        if np.linalg.norm(hand_pos[:2] - stick_pos[:2]) > 0.02 or abs(hand_pos[2] - stick_pos[2]) > 0.02:
+            return -1.0, False
         else:
-            return +0.7
+            return +0.7, True
