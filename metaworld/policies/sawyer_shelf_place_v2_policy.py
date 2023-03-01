@@ -15,7 +15,7 @@ class SawyerShelfPlaceV2Policy(Policy):
             'block_pos': obs[4:7],
             'unused_2':  obs[7:-3],
             'shelf_x': obs[-3],
-            'unused_3': obs[-2:],
+            'shelf_yz': obs[-2:],
         }
 
     def get_action(self, obs):
@@ -35,7 +35,10 @@ class SawyerShelfPlaceV2Policy(Policy):
     def _desired_pos(o_d):
         pos_curr = o_d['hand_pos']
         pos_block = o_d['block_pos'] + np.array([-.005, .0, .015])
+        pos_block_ = o_d['block_pos']
         pos_shelf_x = o_d['shelf_x']
+        pos_shelf = np.array([o_d['shelf_x'], o_d['shelf_yz'][0], o_d['shelf_yz'][1]])
+
         if np.linalg.norm(pos_curr[:2] - pos_block[:2]) > 0.04:
             # positioning over block
             return pos_block + np.array([0., 0., 0.3])
@@ -51,8 +54,9 @@ class SawyerShelfPlaceV2Policy(Policy):
             return pos_new
         else:
             # move forward to goal
-            pos_new = pos_curr + np.array([0., 0.05, 0.])
-            return pos_new
+            return pos_shelf - pos_block_ + pos_curr
+            # pos_new = pos_curr + np.array([0., 0.05, 0.])
+            # return pos_new
 
     @staticmethod
     def _grab_effort(o_d):

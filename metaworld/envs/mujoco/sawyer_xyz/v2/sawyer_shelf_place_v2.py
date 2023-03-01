@@ -9,6 +9,8 @@ from metaworld.envs.mujoco.sawyer_xyz.sawyer_xyz_env import SawyerXYZEnv, _asser
 
 class SawyerShelfPlaceEnvV2(SawyerXYZEnv):
 
+    TARGET_RADIUS = 0.05
+
     def __init__(self):
         goal_low = (-0.1, 0.8, 0.299)
         goal_high = (0.1, 0.9, 0.301)
@@ -49,7 +51,7 @@ class SawyerShelfPlaceEnvV2(SawyerXYZEnv):
     def evaluate_state(self, obs, action):
         obj = obs[4:7]
         reward, tcp_to_obj, tcp_open, obj_to_target, grasp_reward, in_place = self.compute_reward(action, obs)
-        success = float(obj_to_target <= 0.07)
+        success = float(obj_to_target <= self.TARGET_RADIUS)
         near_object = float(tcp_to_obj <= 0.03)
         grasp_success = float(self.touching_object and (tcp_open > 0) and (obj[2] - 0.02 > self.obj_init_pos[2]))
 
@@ -106,7 +108,6 @@ class SawyerShelfPlaceEnvV2(SawyerXYZEnv):
         return self._get_obs()
 
     def compute_reward(self, action, obs):
-        _TARGET_RADIUS = 0.05
         tcp = self.tcp_center
         obj = obs[4:7]
         tcp_opened = obs[3]
@@ -117,7 +118,7 @@ class SawyerShelfPlaceEnvV2(SawyerXYZEnv):
         in_place_margin = np.linalg.norm(self.obj_init_pos - target)
 
         in_place = reward_utils.tolerance(obj_to_target,
-                                    bounds=(0, _TARGET_RADIUS),
+                                    bounds=(0, self.TARGET_RADIUS),
                                     margin=in_place_margin,
                                     sigmoid='long_tail',)
 
@@ -132,9 +133,9 @@ class SawyerShelfPlaceEnvV2(SawyerXYZEnv):
 
         if (0.0 < obj[2] < 0.24 and \
                 (target[0]-0.15 < obj[0] < target[0]+0.15) and \
-                ((target[1] - 3*_TARGET_RADIUS) < obj[1] < target[1])):
+                ((target[1] - 3*self.TARGET_RADIUS) < obj[1] < target[1])):
             z_scaling = (0.24 - obj[2])/0.24
-            y_scaling = (obj[1] - (target[1] - 3*_TARGET_RADIUS)) / (3*_TARGET_RADIUS)
+            y_scaling = (obj[1] - (target[1] - 3*self.TARGET_RADIUS)) / (3*self.TARGET_RADIUS)
             bound_loss = reward_utils.hamacher_product(y_scaling, z_scaling)
             in_place = np.clip(in_place - bound_loss, 0.0, 1.0)
 
@@ -147,7 +148,7 @@ class SawyerShelfPlaceEnvV2(SawyerXYZEnv):
                 (obj[2] - 0.01 > self.obj_init_pos[2]):
             reward += 1. + 5. * in_place
 
-        if obj_to_target < _TARGET_RADIUS:
+        if obj_to_target < self.TARGET_RADIUS:
             reward = 10.
 
         return [
