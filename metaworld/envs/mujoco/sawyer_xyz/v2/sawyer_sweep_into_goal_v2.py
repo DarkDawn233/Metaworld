@@ -61,7 +61,7 @@ class SawyerSweepIntoGoalEnvV2(SawyerXYZEnv):
         grasp_success = float(self.touching_main_object and (tcp_opened > 0))
 
         info = {
-            'success': float(target_to_obj <= 0.05),
+            'success': float(target_to_obj <= 0.02),
             'near_object': float(tcp_to_obj <= 0.03),
             'grasp_reward': object_grasped,
             'grasp_success': grasp_success,
@@ -170,7 +170,7 @@ class SawyerSweepIntoGoalEnvV2(SawyerXYZEnv):
         return caging_and_gripping
 
     def compute_reward(self, action, obs):
-        _TARGET_RADIUS = 0.05
+        _TARGET_RADIUS = 0.02
         tcp = self.tcp_center
         obj = obs[4:7]
         tcp_opened = obs[3]
