@@ -131,6 +131,9 @@ class SawyerWindowOpenEnvV2(SawyerXYZEnv):
         object_grasped = reach
 
         reward = 10 * reward_utils.hamacher_product(reach, in_place)
+        if target_to_obj < self.TARGET_RADIUS:
+            reward = 10.
+            
         return (reward,
                tcp_to_obj,
                tcp_opened,
