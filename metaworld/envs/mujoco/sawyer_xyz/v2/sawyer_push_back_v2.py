@@ -10,7 +10,7 @@ from metaworld.envs.mujoco.sawyer_xyz.sawyer_xyz_env import SawyerXYZEnv, _asser
 class SawyerPushBackEnvV2(SawyerXYZEnv):
 
     OBJ_RADIUS = 0.007
-    TARGET_RADIUS = 0.05
+    TARGET_RADIUS = 0.03
 
     def __init__(self):
 
@@ -59,7 +59,7 @@ class SawyerPushBackEnvV2(SawyerXYZEnv):
             in_place
         ) = self.compute_reward(action, obs)
 
-        success = float(target_to_obj <= 0.07)
+        success = float(target_to_obj <= self.TARGET_RADIUS)
         near_object = float(tcp_to_obj <= 0.03)
         grasp_success = float(self.touching_object and (tcp_opened > 0) and \
                         (obj[2] - 0.02 > self.obj_init_pos[2]))
