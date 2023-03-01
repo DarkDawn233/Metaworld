@@ -43,11 +43,11 @@ class SawyerPickOutOfHoleV2Policy(Policy):
         elif abs(pos_curr[2] - pos_puck[2]) > 0.01:
             return pos_puck
         # If not at the same Z height as the goal, move up to that plane
-        elif abs(pos_curr[2] - pos_goal[2]) > 0.04:
+        elif abs(pos_puck[2] - pos_goal[2]) > 0.04:
             return np.array([*pos_curr[:2], pos_goal[2]])
         # Move to the goal
         else:
-            return pos_goal
+            return pos_goal - pos_puck + pos_curr
 
     @staticmethod
     def _grab_effort(o_d):

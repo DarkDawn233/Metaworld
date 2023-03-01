@@ -8,7 +8,7 @@ from metaworld.envs.mujoco.sawyer_xyz.sawyer_xyz_env import SawyerXYZEnv, _asser
 
 
 class SawyerPickOutOfHoleEnvV2(SawyerXYZEnv):
-    _TARGET_RADIUS = 0.02
+    TARGET_RADIUS = 0.02
 
     def __init__(self):
         hand_low = (-0.5, 0.40, -0.05)
@@ -55,7 +55,7 @@ class SawyerPickOutOfHoleEnvV2(SawyerXYZEnv):
             in_place_reward
         ) = self.compute_reward(action, obs)
 
-        success = float(obj_to_target <= 0.07)
+        success = float(obj_to_target <= self.TARGET_RADIUS)
         near_object = float(tcp_to_obj <= 0.03)
         grasp_success = float(grasp_success)
 
