@@ -10,7 +10,7 @@ from metaworld.envs.mujoco.sawyer_xyz.sawyer_xyz_env import SawyerXYZEnv, _asser
 
 class SawyerPlateSlideEnvV2(SawyerXYZEnv):
 
-    OBJ_RADIUS = 0.04
+    TARGET_RADIUS = 0.04
 
     def __init__(self):
 
@@ -58,7 +58,7 @@ class SawyerPlateSlideEnvV2(SawyerXYZEnv):
             in_place
         ) = self.compute_reward(action, obs)
 
-        success = float(obj_to_target <= 0.07)
+        success = float(obj_to_target <= self.TARGET_RADIUS)
         near_object = float(tcp_to_obj <= 0.03)
 
         info = {
@@ -103,7 +103,7 @@ class SawyerPlateSlideEnvV2(SawyerXYZEnv):
         return self._get_obs()
 
     def compute_reward(self, action, obs):
-        _TARGET_RADIUS = 0.05
+        # _TARGET_RADIUS = 0.05
         tcp = self.tcp_center
         obj = obs[4:7]
         tcp_opened = obs[3]
@@ -113,7 +113,7 @@ class SawyerPlateSlideEnvV2(SawyerXYZEnv):
         in_place_margin = np.linalg.norm(self.obj_init_pos - target)
 
         in_place = reward_utils.tolerance(obj_to_target,
-                                    bounds=(0, _TARGET_RADIUS),
+                                    bounds=(0, self.TARGET_RADIUS),
                                     margin=in_place_margin,
                                     sigmoid='long_tail',)
 
@@ -121,7 +121,7 @@ class SawyerPlateSlideEnvV2(SawyerXYZEnv):
         obj_grasped_margin = np.linalg.norm(self.init_tcp - self.obj_init_pos)
 
         object_grasped = reward_utils.tolerance(tcp_to_obj,
-                                    bounds=(0, _TARGET_RADIUS),
+                                    bounds=(0, self.TARGET_RADIUS),
                                     margin=obj_grasped_margin,
                                     sigmoid='long_tail',)
 
@@ -129,7 +129,7 @@ class SawyerPlateSlideEnvV2(SawyerXYZEnv):
                                                                     in_place)
         reward = 8 * in_place_and_object_grasped
 
-        if obj_to_target < _TARGET_RADIUS:
+        if obj_to_target < self.TARGET_RADIUS:
             reward = 10.
         return [
             reward,
