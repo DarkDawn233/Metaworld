@@ -26,8 +26,8 @@ class SawyerPushWallEnvV2(SawyerXYZEnv):
         - (6/15/20) Separated reach-push-pick-place into 3 separate envs.
     """
 
-    OBJ_RADIUS = 0.02
-
+    # OBJ_RADIUS = 0.02
+    TARGET_RADIUS = 0.02
     def __init__(self):
         hand_low = (-0.5, 0.40, 0.05)
         hand_high = (0.5, 1, 0.5)
@@ -78,7 +78,7 @@ class SawyerPushWallEnvV2(SawyerXYZEnv):
             in_place_reward,
         ) = self.compute_reward(action, obs)
 
-        success = float(obj_to_target <= 0.07)
+        success = float(obj_to_target <= self.TARGET_RADIUS)
         near_object = float(tcp_to_obj <= 0.03)
         grasp_success = float(self.touching_main_object and (tcp_open > 0)
                               and (obj[2] - 0.02 > self.obj_init_pos[2]))
@@ -126,7 +126,7 @@ class SawyerPushWallEnvV2(SawyerXYZEnv):
         return self._get_obs()
 
     def compute_reward(self, action, obs):
-        _TARGET_RADIUS = 0.05
+        # _TARGET_RADIUS = 0.05
         tcp = self.tcp_center
         obj = obs[4:7]
         tcp_opened = obs[3]
@@ -143,13 +143,13 @@ class SawyerPushWallEnvV2(SawyerXYZEnv):
         obj_to_target_init = np.linalg.norm(self.obj_init_pos - target)
 
         in_place_part1 = reward_utils.tolerance(obj_to_midpoint,
-            bounds=(0, _TARGET_RADIUS),
+            bounds=(0, self.TARGET_RADIUS),
             margin=obj_to_midpoint_init,
             sigmoid='long_tail',
         )
 
         in_place_part2 = reward_utils.tolerance(obj_to_target,
-            bounds=(0, _TARGET_RADIUS),
+            bounds=(0, self.TARGET_RADIUS),
             margin=obj_to_target_init,
             sigmoid='long_tail'
         )
@@ -170,7 +170,7 @@ class SawyerPushWallEnvV2(SawyerXYZEnv):
             if obj[1] > 0.75:
                 reward = 2 * object_grasped + 1. + 4. + 3. * in_place_part2
 
-        if obj_to_target < _TARGET_RADIUS:
+        if obj_to_target < self.TARGET_RADIUS:
             reward = 10.
 
         return [
