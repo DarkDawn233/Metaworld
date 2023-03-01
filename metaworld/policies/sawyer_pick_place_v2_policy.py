@@ -49,7 +49,7 @@ class SawyerPickPlaceV2Policy(Policy):
             return pos_curr
         # Move to goal
         else:
-            return pos_goal
+            return pos_goal - pos_puck + pos_curr
 
     @staticmethod
     def _grab_effort(o_d):
