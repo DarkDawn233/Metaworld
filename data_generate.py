@@ -121,18 +121,35 @@ def read_h5(task_name, seed):
             data[v] = {}
             for vk, vv in v.items():
                 data[v][vk] = np.array(vv)
-                # print(vk, data[v][vk].shape)
+                # print(vk, data[v][vk].shape, data[v][vk].dtype)
         else:
             data[k] = np.array(v)
-            # print(k, data[k].shape)
+            # print(k, data[k].shape, data[k].dtype)
+            # print(np.array(v[1]))
     return data
 
-def test_env(task_name):
-    fail_list = []
-    for seed in range(100):
+def thread_test_env(task_name, begin_seed, end_seed, q):
+    for seed in range(begin_seed, end_seed):
         demo, success = run_demo(task_name=task_name, seed=seed)
         if not success:
-            fail_list.append(seed)
+            q.put(seed)
+
+def test_env(task_name, thread_num=20):
+    thread_len = 100 // thread_num
+    q = multiprocessing.Queue()
+    thread_list = []
+    for t_id in range(thread_num):
+        t = multiprocessing.Process(target=thread_test_env, args=(task_name, t_id*thread_len, (t_id+1)*thread_len, q))
+        t.start()
+        thread_list.append(t)
+    for t in thread_list:
+        t.join()
+
+    fail_list = []
+    while not q.empty():
+        fail_seed = q.get()
+        fail_list.append(fail_seed)
+    fail_list.sort()
     print("Fail list:", fail_list)
 
 def thread_generate_data(t_id, task_name, begin_seed, end_seed):
@@ -176,14 +193,14 @@ def stat_success(task_name, thread_num=10):
 
 if __name__ == "__main__":
     os.environ['CUDA_VISIBLE_DEVICES']='1'
-    task_name = "button-press-wall"
-    seed = 2
+    task_name = "soccer"
+    seed = 6
     demo, _ = run_demo(task_name=task_name, seed=seed, debug=True)
-    demo = cal_return_to_go(demo)
-    # show_demo(task_name=task_name, seed=seed, demo=demo)
+    # # demo = cal_return_to_go(demo)
+    show_demo(task_name=task_name, seed=seed, demo=demo)
 
-    write_h5(task_name=task_name, seed=seed, demo=demo)
-    read_h5(task_name=task_name, seed=seed)
+    # write_h5(task_name=task_name, seed=seed, demo=demo)
+    # read_h5(task_name=task_name, seed=seed)
 
     # test_env(task_name)
     # task_name_list = [
