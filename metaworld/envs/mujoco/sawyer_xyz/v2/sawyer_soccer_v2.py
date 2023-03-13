@@ -60,7 +60,7 @@ class SawyerSoccerEnvV2(SawyerXYZEnv):
             in_place
         ) = self.compute_reward(action, obs)
 
-        success = float(target_to_obj <= 0.07)
+        success = float(target_to_obj < self.TARGET_RADIUS)
         near_object = float(tcp_to_obj <= 0.03)
         grasp_success = float(self.touching_object and (tcp_opened > 0) and (obj[2] - 0.02 > self.obj_init_pos[2]))
         info = {
@@ -179,7 +179,7 @@ class SawyerSoccerEnvV2(SawyerXYZEnv):
         tcp_opened = obs[3]
         x_scaling = np.array([3., 1., 1.])
         tcp_to_obj = np.linalg.norm(obj - self.tcp_center)
-        target_to_obj = np.linalg.norm((obj - self._target_pos) * x_scaling)
+        target_to_obj = np.linalg.norm((obj - self._target_pos))
         target_to_obj_init = np.linalg.norm((obj - self.obj_init_pos) * x_scaling)
 
         in_place = reward_utils.tolerance(
