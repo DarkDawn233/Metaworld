@@ -15,59 +15,59 @@ ROOT_PATH = Path(__file__).absolute().parents[0] / "data"
 BIN_PATH = Path(__file__).absolute().parents[0] / "data_bin"
 TASK_LIST = [
         # "assembly",
-        "basketball",
-        "bin-picking",
-        "box-close",
-        "button-press-topdown",
-        "button-press-topdown-wall",
-        "button-press",
-        "button-press-wall",
-        "coffee-button",
-        "coffee-pull",
-        "coffee-push",
-        "dial-turn",
-        "disassemble",
-        "door-close",
-        "door-lock",
-        "door-open",
-        "door-unlock",
-        "drawer-close",
-        "drawer-open",
-        "faucet-close",
-        "faucet-open",
-        "hammer",
-        "hand-insert",
-        "handle-press-side",
-        "handle-press",
-        "handle-pull-side",
-        "handle-pull",
-        "lever-pull",
-        "peg-insert-side",
-        "peg-unplug-side",
-        "pick-out-of-hole",
-        "pick-place",
-        "pick-place-wall",
-        "plate-slide-back-side",
-        "plate-slide-back",
-        "plate-slide-side",
-        "plate-slide",
-        "push-back",
-        "push",
-        "push-wall",
-        "reach",
-        "reach-wall",
-        "shelf-place",
-        # "soccer",
-        "stick-pull",
-        "stick-push",
-        "sweep-into",
-        "sweep",
-        "window-close",
-        "window-open",
+        # "basketball",
+        # "bin-picking",
+        # "box-close",
+        # "button-press-topdown",
+        # "button-press-topdown-wall",
+        # "button-press",
+        # "button-press-wall",
+        # "coffee-button",
+        # "coffee-pull",
+        # "coffee-push",
+        # "dial-turn",
+        # "disassemble",
+        # "door-close",
+        # "door-lock",
+        # "door-open",
+        # "door-unlock",
+        # "drawer-close",
+        # "drawer-open",
+        # "faucet-close",
+        # "faucet-open",
+        # "hammer",
+        # "hand-insert",
+        # "handle-press-side",
+        # "handle-press",
+        # "handle-pull-side",
+        # "handle-pull",
+        # "lever-pull",
+        # "peg-insert-side",
+        # "peg-unplug-side",
+        # "pick-out-of-hole",
+        # "pick-place",
+        # "pick-place-wall",
+        # "plate-slide-back-side",
+        # "plate-slide-back",
+        # "plate-slide-side",
+        # "plate-slide",
+        # "push-back",
+        # "push",
+        # "push-wall",
+        # "reach",
+        # "reach-wall",
+        # "shelf-place",
+        "soccer",
+        # "stick-pull",
+        # "stick-push",
+        # "sweep-into",
+        # "sweep",
+        # "window-close",
+        # "window-open",
         ]
-EPISODE_LIST = [i for i in range(2000)]
+EPISODE_LIST = [i for i in range(2200)]
 # REPLAY_LIST = [str(i) for i in range(1, 2)]
-CKPT_LIST = [i for i in range(20)]
+CKPT_LIST = [i for i in range(22)]
 
 THREAD_NUM = 50
 PROCESS_NUM = 5
@@ -184,7 +184,7 @@ def thread_process_data(t_id, task, id_begin, id_end, t_dict):
 
 def write_bin(task, ckpt):
 
-    begin_episode = ckpt * (2000 // len(CKPT_LIST))
+    begin_episode = ckpt * (len(EPISODE_LIST) // len(CKPT_LIST))
 
     bin_dir = BIN_PATH / task / str(ckpt)
     if not os.path.exists(bin_dir):
@@ -195,7 +195,7 @@ def write_bin(task, ckpt):
     clear_file(data_bin_path, index_bin_path)
 
     data_thread_dict = {}
-    valid_len = 2000 // len(CKPT_LIST)
+    valid_len = len(EPISODE_LIST) // len(CKPT_LIST)
     thread_len = valid_len // THREAD_NUM
     thread_list = []
     for i in range(THREAD_NUM):
@@ -262,7 +262,7 @@ def multiprocess_write_bin(process_num = 20):
             process_list.append(p)
 
 def random_test(test_num=1000, test_in_num=10):
-    ckpt_episode_len = 2000 // len(CKPT_LIST)
+    ckpt_episode_len = len(EPISODE_LIST) // len(CKPT_LIST)
     for _ in range(test_num):
         task = random.choice(TASK_LIST)
         ckpt = random.choice(CKPT_LIST)
@@ -350,4 +350,4 @@ def random_test(test_num=1000, test_in_num=10):
 
 # write_bin("push-back", 6)
 # multiprocess_write_bin(PROCESS_NUM)
-random_test(1000)
+# random_test(1000)
