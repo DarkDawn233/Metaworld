@@ -80,6 +80,14 @@ class SawyerWindowCloseEnvV2(SawyerXYZEnv):
         }
 
         return reward, info
+    
+    def reset(self):
+        self.curr_path_length = 0
+        obs = super().reset()
+        self.last_reward, _ = self.evaluate_state(obs, [0., 0., 0., 0.])
+        obs, _, _, _ = self.step([0., 0., 0., 0.])
+        # self.last_reward, _ = self.evaluate_state(obs, [0., 0., 0., 0.])
+        return obs
 
     def _get_pos_objects(self):
         return self._get_site_pos('handleCloseStart')
