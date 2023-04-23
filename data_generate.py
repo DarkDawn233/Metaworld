@@ -1,6 +1,7 @@
 from task_config import TASK_DICK
 import numpy as np
 from PIL import Image
+import imageio
 import os
 from pathlib import Path
 import h5py
@@ -24,11 +25,16 @@ def get_img(env):
         image[camera_name] = img
     return image
 
-def show_demo(task_name, seed, demo):
+def show_demo(task_name, seed, demo, gif=False):
     img_dict = demo['img']
     for camera_name in CAMERA_LIST:
         img_list = img_dict[camera_name]
-        root_path = Path(__file__).parent / 'data' / task_name / str(seed) / camera_name
+        root_path = Path(__file__).parent / 'data' / task_name / str(seed)
+        root_path.mkdir(exist_ok=True, parents=True)
+        if gif:
+            imageio.mimsave(str(root_path / (camera_name + '.gif')), img_list, fps=25)
+            continue
+        root_path = root_path / camera_name
         root_path.mkdir(exist_ok=True, parents=True)
         for i, img in enumerate(img_list):
             save_jpeg(img, root_path / (str(i)+".jpeg"))
@@ -197,7 +203,7 @@ if __name__ == "__main__":
     seed = 6
     demo, _ = run_demo(task_name=task_name, seed=seed, debug=True)
     # # demo = cal_return_to_go(demo)
-    show_demo(task_name=task_name, seed=seed, demo=demo)
+    show_demo(task_name=task_name, seed=seed, demo=demo, gif=True)
 
     # write_h5(task_name=task_name, seed=seed, demo=demo)
     # read_h5(task_name=task_name, seed=seed)
