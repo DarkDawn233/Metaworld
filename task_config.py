@@ -1,6 +1,8 @@
 from metaworld.envs import ALL_V2_ENVIRONMENTS_GOAL_OBSERVABLE
 from metaworld.policies import *
 
+from metaworld.envs import ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE
+
 TASK_DICK = {
      'assembly':                    {'env': ALL_V2_ENVIRONMENTS_GOAL_OBSERVABLE["assembly-v2-goal-observable"]                      ,'policy': SawyerAssemblyV2Policy},
      'basketball':                  {'env': ALL_V2_ENVIRONMENTS_GOAL_OBSERVABLE["basketball-v2-goal-observable"]                    ,'policy': SawyerBasketballV2Policy},
@@ -52,6 +54,13 @@ TASK_DICK = {
      'sweep':                       {'env': ALL_V2_ENVIRONMENTS_GOAL_OBSERVABLE["sweep-v2-goal-observable"]                         ,'policy': SawyerSweepV2Policy},
      'window-close':                {'env': ALL_V2_ENVIRONMENTS_GOAL_OBSERVABLE["window-close-v2-goal-observable"]                  ,'policy': SawyerWindowCloseV2Policy},
      'window-open':                 {'env': ALL_V2_ENVIRONMENTS_GOAL_OBSERVABLE["window-open-v2-goal-observable"]                   ,'policy': SawyerWindowOpenV2Policy},
+
+     'coffee-button-display':       {'env': ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE["coffee-button-v2-display-goal-observable"]    ,'policy': SawyerCoffeeButtonV2Policy},
+     'coffee-pull-display':         {'env': ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE["coffee-pull-v2-display-goal-observable"]      ,'policy': SawyerCoffeePullV2Policy},
+     'coffee-push-display':         {'env': ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE["coffee-push-v2-display-goal-observable"]      ,'policy': SawyerCoffeePushV2Policy},
+     'drawer-close-display':        {'env': ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE["drawer-close-v2-display-goal-observable"]     ,'policy': SawyerDrawerCloseV2Policy},
+     'drawer-open-display':         {'env': ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE["drawer-open-v2-display-goal-observable"]      ,'policy': SawyerDrawerOpenV2Policy},
+     'shelf-place-display':         {'env': ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE["shelf-place-v2-display-goal-observable"]      ,'policy': SawyerShelfPlaceV2Policy},
 }
 
 def test():

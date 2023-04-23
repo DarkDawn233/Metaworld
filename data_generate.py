@@ -193,7 +193,7 @@ def stat_success(task_name, thread_num=10):
 
 if __name__ == "__main__":
     os.environ['CUDA_VISIBLE_DEVICES']='1'
-    task_name = "soccer"
+    task_name = "drawer-close-display"
     seed = 6
     demo, _ = run_demo(task_name=task_name, seed=seed, debug=True)
     # # demo = cal_return_to_go(demo)
