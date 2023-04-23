@@ -1,5 +1,6 @@
 from metaworld.envs import ALL_V2_ENVIRONMENTS_GOAL_OBSERVABLE
 from metaworld.policies import *
+from metaworld.policies.display_policy import *
 
 from metaworld.envs import ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE
 
@@ -55,12 +56,12 @@ TASK_DICK = {
      'window-close':                {'env': ALL_V2_ENVIRONMENTS_GOAL_OBSERVABLE["window-close-v2-goal-observable"]                  ,'policy': SawyerWindowCloseV2Policy},
      'window-open':                 {'env': ALL_V2_ENVIRONMENTS_GOAL_OBSERVABLE["window-open-v2-goal-observable"]                   ,'policy': SawyerWindowOpenV2Policy},
 
-     'coffee-button-display':       {'env': ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE["coffee-button-v2-display-goal-observable"]    ,'policy': SawyerCoffeeButtonV2Policy},
-     'coffee-pull-display':         {'env': ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE["coffee-pull-v2-display-goal-observable"]      ,'policy': SawyerCoffeePullV2Policy},
-     'coffee-push-display':         {'env': ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE["coffee-push-v2-display-goal-observable"]      ,'policy': SawyerCoffeePushV2Policy},
-     'drawer-close-display':        {'env': ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE["drawer-close-v2-display-goal-observable"]     ,'policy': SawyerDrawerCloseV2Policy},
-     'drawer-open-display':         {'env': ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE["drawer-open-v2-display-goal-observable"]      ,'policy': SawyerDrawerOpenV2Policy},
-     'shelf-place-display':         {'env': ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE["shelf-place-v2-display-goal-observable"]      ,'policy': SawyerShelfPlaceV2Policy},
+     'coffee-button-display':       {'env': ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE["coffee-button-v2-display-goal-observable"]    ,'policy': SawyerCoffeeButtonV2DisplayPolicy},
+     'coffee-pull-display':         {'env': ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE["coffee-pull-v2-display-goal-observable"]      ,'policy': SawyerCoffeePullV2DisplayPolicy},
+     'coffee-push-display':         {'env': ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE["coffee-push-v2-display-goal-observable"]      ,'policy': SawyerCoffeePushV2DisplayPolicy},
+     'drawer-close-display':        {'env': ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE["drawer-close-v2-display-goal-observable"]     ,'policy': SawyerDrawerCloseV2DisplayPolicy},
+     'drawer-open-display':         {'env': ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE["drawer-open-v2-display-goal-observable"]      ,'policy': SawyerDrawerOpenV2DisplayPolicy},
+     'shelf-place-display':         {'env': ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE["shelf-place-v2-display-goal-observable"]      ,'policy': SawyerShelfPlaceV2DisplayPolicy},
 }
 
 def test():
