@@ -1,5 +1,6 @@
 from task_config import TASK_DICK
 import numpy as np
+import random
 from PIL import Image
 import imageio
 import os
@@ -8,8 +9,8 @@ import h5py
 import threading
 import multiprocessing
 
-# CAMERA_LIST = ["corner3", "corner", "corner2", "topview", "behindGripper"]
-CAMERA_LIST = ["corner3", "corner", "topview"]
+CAMERA_LIST = ["corner3", "corner", "corner2", "topview", "behindGripper"]
+# CAMERA_LIST = ["corner3", "corner", "topview"]
 
 def show_all_task():
     return TASK_DICK.keys()
@@ -39,7 +40,7 @@ def show_demo(task_name, seed, demo, gif=False):
         for i, img in enumerate(img_list):
             save_jpeg(img, root_path / (str(i)+".jpeg"))
 
-def run_demo(task_name, seed=0, debug=False):
+def run_demo(task_name, seed=0, max_step=400, debug=False):
     env = TASK_DICK[task_name]['env'](seed=seed)
     policy = TASK_DICK[task_name]['policy']()
 
@@ -64,7 +65,7 @@ def run_demo(task_name, seed=0, debug=False):
     final_done = 0
     step = 0
 
-    while final_done < 1 and step < 400:
+    while final_done < 1 and step < max_step:
         a = policy.get_action(obs)
         a = np.clip(a, -1, 1)
         demo['action'].append(a)
@@ -200,10 +201,13 @@ def stat_success(task_name, thread_num=10):
 if __name__ == "__main__":
     os.environ['CUDA_VISIBLE_DEVICES']='1'
     task_name = "drawer-close-display"
-    seed = 6
-    demo, _ = run_demo(task_name=task_name, seed=seed, debug=True)
-    # # demo = cal_return_to_go(demo)
-    show_demo(task_name=task_name, seed=seed, demo=demo, gif=True)
+    for seed in range(10):
+        # seed = 6
+        random.seed(seed)
+        np.random.seed(seed)
+        demo, _ = run_demo(task_name=task_name, seed=seed, max_step=400, debug=True)
+        # # demo = cal_return_to_go(demo)
+        show_demo(task_name=task_name, seed=seed, demo=demo, gif=True)
 
     # write_h5(task_name=task_name, seed=seed, demo=demo)
     # read_h5(task_name=task_name, seed=seed)
