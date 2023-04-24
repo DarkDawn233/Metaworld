@@ -445,7 +445,7 @@ class SawyerXYZEnv(SawyerMocapBase, metaclass=abc.ABCMeta):
             return self._last_stable_obs
 
         reward, info = self.evaluate_state(self._last_stable_obs, action)
-        done = bool(info['success'])
+        done = bool(info['success']) and bool(info.get('after_success', True))
         rew = reward - self.last_reward
         self.last_reward = reward
         return self._last_stable_obs, rew, done, info

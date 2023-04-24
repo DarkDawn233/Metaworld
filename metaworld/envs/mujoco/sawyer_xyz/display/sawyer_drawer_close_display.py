@@ -68,7 +68,10 @@ class SawyerDrawerCloseEnvV2Display(SawyerXYZEnv):
             'unscaled_reward': reward,
         }
 
-        return reward, info
+        info['after_success'] = self._get_after_success(info)
+        after_reward = self._get_after_reward(info)
+
+        return reward + after_reward, info
 
     def _get_pos_objects(self):
         if not hasattr(self, 'quat_index'):
@@ -96,9 +99,10 @@ class SawyerDrawerCloseEnvV2Display(SawyerXYZEnv):
         if pos is None:
             x_range = [-0.5, 0.5]
             y_range = [0.25, 0.85]
-            z = 0.3
+            z_range = [0.29, 0.3]
             x = random.random() * (x_range[1] - x_range[0]) + x_range[0]
             y = random.random() * (y_range[1] - y_range[0]) + y_range[0]
+            z = random.random() * (z_range[1] - z_range[0]) + z_range[0]
             pos = [x, y, z]
         self.hand_init_pos = pos
         self._reset_hand()
@@ -229,3 +233,15 @@ class SawyerDrawerCloseEnvV2Display(SawyerXYZEnv):
                target_to_obj,
                object_grasped,
                in_place)
+    
+    def _get_after_success(self, info):
+        hand_pos = self.get_endeff_pos()
+        return info['success'] and (hand_pos[2] >= 0.29)
+
+    def _get_after_reward(self, info):
+        if not info['success']:
+            return 0
+        else:
+            hand_pos = self.get_endeff_pos()
+            return 2 * hand_pos[2] / 0.3
+

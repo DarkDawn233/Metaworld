@@ -64,9 +64,10 @@ def run_demo(task_name, seed=0, max_step=400, debug=False):
     ever_done = False
     final_done = 0
     step = 0
+    info = {}
 
     while final_done < 1 and step < max_step:
-        a = policy.get_action(obs)
+        a = policy.get_action(obs, info)
         a = np.clip(a, -1, 1)
         demo['action'].append(a)
         obs, reward, done, info = env.step(a)

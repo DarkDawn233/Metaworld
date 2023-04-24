@@ -17,13 +17,19 @@ class SawyerDrawerCloseV2DisplayPolicy(Policy):
             'unused_info': obs[11:],
         }
 
-    def get_action(self, obs):
+    def get_action(self, obs, info={}):
         o_d = self._parse_obs(obs)
 
         action = Action({
             'delta_pos': np.arange(3),
             'grab_effort': 3
         })
+
+        if info.get('success', False):
+            target_pos = [o_d['hand_pos'][0], o_d['hand_pos'][1], 0.3]
+            action['delta_pos'] = move(o_d['hand_pos'], to_xyz=target_pos, p=25.)
+            action['grab_effort'] = -1.
+            return action.array
 
         action['delta_pos'] = move(o_d['hand_pos'], to_xyz=self._desired_pos(o_d), p=25.)
         action['grab_effort'] = 1.
