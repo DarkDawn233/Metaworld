@@ -2,7 +2,7 @@ import numpy as np
 
 from metaworld.policies.action import Action
 from metaworld.policies.policy import Policy, assert_fully_parsed, move
-
+from metaworld.envs.display_utils import QUAT_LIST
 
 class SawyerDrawerCloseV2DisplayPolicy(Policy):
 
@@ -13,7 +13,8 @@ class SawyerDrawerCloseV2DisplayPolicy(Policy):
             'hand_pos': obs[:3],
             'unused_grasp_info': obs[3],
             'drwr_pos': obs[4:7],
-            'unused_info': obs[7:],
+            'drwr_quat': obs[7:11],
+            'unused_info': obs[11:],
         }
 
     def get_action(self, obs):
@@ -29,22 +30,62 @@ class SawyerDrawerCloseV2DisplayPolicy(Policy):
 
         return action.array
 
+
     @staticmethod
     def _desired_pos(o_d):
         pos_curr = o_d['hand_pos']
         pos_drwr = o_d['drwr_pos'] + np.array([.0, .0, -.02])
 
-        # if further forward than the drawer...
-        if pos_curr[1] > pos_drwr[1]:
-            if pos_curr[2] < pos_drwr[2] + 0.23:
-                # rise up quickly (Z direction)
-                return np.array([pos_curr[0], pos_curr[1], pos_drwr[2] + 0.5])
+        quat = o_d['drwr_quat']
+        quat_list = QUAT_LIST[:4]
+        for i in range(len(quat_list)):
+            if np.sum((quat - np.array(quat_list[i])) ** 2) < 1e-5:
+                # print("index:", i)
+                quat_index = i
+                break
+
+        if quat_index == 0:
+            # if further forward than the drawer...
+            if pos_curr[1] > pos_drwr[1]:
+                if pos_curr[2] < pos_drwr[2] + 0.23:
+                    # rise up quickly (Z direction)
+                    return np.array([pos_curr[0], pos_curr[1], pos_drwr[2] + 0.5])
+                else:
+                    # move to front edge of drawer handle, but stay high in Z
+                    return pos_drwr + np.array([0., -0.075, 0.23])
+            # drop down to touch drawer handle
+            elif abs(pos_curr[2] - pos_drwr[2]) > 0.01:
+                return pos_drwr + np.array([0., -0.075, 0.])
+            # push toward drawer handle's centroid
             else:
-                # move to front edge of drawer handle, but stay high in Z
-                return pos_drwr + np.array([0., -0.075, 0.23])
-        # drop down to touch drawer handle
-        elif abs(pos_curr[2] - pos_drwr[2]) > 0.01:
-            return pos_drwr + np.array([0., -0.075, 0.])
-        # push toward drawer handle's centroid
+                return pos_drwr
+        elif quat_index == 3:
+            if pos_curr[1] < pos_drwr[1]:
+                if pos_curr[2] < pos_drwr[2] + 0.23:
+                    return np.array([pos_curr[0], pos_curr[1], pos_drwr[2] + 0.5])
+                else:
+                    return pos_drwr + np.array([0., +0.075, 0.23])
+            elif abs(pos_curr[2] - pos_drwr[2]) > 0.01:
+                return pos_drwr + np.array([0., +0.075, 0.])
+            else:
+                return pos_drwr
+        elif quat_index == 1:
+            if pos_curr[0] < pos_drwr[0]:
+                if pos_curr[2] < pos_drwr[2] + 0.23:
+                    return np.array([pos_curr[0], pos_curr[1], pos_drwr[2] + 0.5])
+                else:
+                    return pos_drwr + np.array([+0.075, 0., 0.23])
+            elif abs(pos_curr[2] - pos_drwr[2]) > 0.01:
+                return pos_drwr + np.array([+0.075, 0., 0.])
+            else:
+                return pos_drwr
         else:
-            return pos_drwr
+            if pos_curr[0] > pos_drwr[0]:
+                if pos_curr[2] < pos_drwr[2] + 0.23:
+                    return np.array([pos_curr[0], pos_curr[1], pos_drwr[2] + 0.5])
+                else:
+                    return pos_drwr + np.array([-0.075, 0., 0.23])
+            elif abs(pos_curr[2] - pos_drwr[2]) > 0.01:
+                return pos_drwr + np.array([-0.075, 0., 0.])
+            else:
+                return pos_drwr

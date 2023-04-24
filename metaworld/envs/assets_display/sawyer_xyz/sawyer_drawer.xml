@@ -9,8 +9,8 @@
             <include file="../objects/assets/drawer.xml"/>
         </body>
 
-        <site name="goal" pos="0. 0.74 0.05" size="0.02"
-              rgba="0 0.8 0 1"/>
+        <!-- <site name="goal" pos="0. 0.74 0.05" size="0.02"
+              rgba="0 0.8 0 1"/> -->
     </worldbody>
 
     <actuator>

@@ -416,8 +416,9 @@ class SawyerXYZEnv(SawyerMocapBase, metaclass=abc.ABCMeta):
 
         # Running the simulator can sometimes mess up site positions, so
         # re-position them here to make sure they're accurate
-        for site in self._target_site_config:
-            self._set_pos_site(*site)
+        # TODO
+        # for site in self._target_site_config:
+        #     self._set_pos_site(*site)
 
         if self._did_see_sim_exception:
             return (

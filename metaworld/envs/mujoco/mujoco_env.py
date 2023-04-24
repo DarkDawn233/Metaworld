@@ -153,3 +153,7 @@ class MujocoEnv(gym.Env, abc.ABC):
 
     def get_body_com(self, body_name):
         return self.data.get_body_xpos(body_name)
+    
+    def get_body_quat(self, body_name):
+        return self.data.get_body_xquat(body_name)
+    

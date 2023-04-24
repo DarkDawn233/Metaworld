@@ -1,9 +1,12 @@
 import numpy as np
+import random
 from gym.spaces import Box
 
 from metaworld.envs import reward_utils
 from metaworld.envs.asset_path_utils import full_display_path_for
 from metaworld.envs.mujoco.sawyer_xyz.sawyer_xyz_env import SawyerXYZEnv, _assert_task_is_set
+
+from metaworld.envs.display_utils import RGB_COLOR_LIST, QUAT_LIST
 
 
 class SawyerDrawerCloseEnvV2Display(SawyerXYZEnv):
@@ -24,7 +27,7 @@ class SawyerDrawerCloseEnvV2Display(SawyerXYZEnv):
         self.init_config = {
             'obj_init_angle': np.array([0.3, ], dtype=np.float32),
             'obj_init_pos': np.array([0., 0.9, 0.0], dtype=np.float32),
-            'hand_init_pos': np.array([0, 0.6, 0.2], dtype=np.float32),
+            'hand_init_pos': np.array([0, 0.6, 0.3], dtype=np.float32),
         }
         self.obj_init_pos = self.init_config['obj_init_pos']
         self.obj_init_angle = self.init_config['obj_init_angle']
@@ -68,31 +71,114 @@ class SawyerDrawerCloseEnvV2Display(SawyerXYZEnv):
         return reward, info
 
     def _get_pos_objects(self):
-        return self.get_body_com('drawer_link') + np.array([.0, -.16, .05])
+        if not hasattr(self, 'quat_index'):
+            return np.zeros(3)
+        if self.quat_index == 0:
+            pos = self.get_body_com('drawer_link') + np.array([.0, -.16, .05])
+        elif self.quat_index == 1:
+            pos = self.get_body_com('drawer_link') + np.array([+.16, .0, .05])
+        elif self.quat_index == 2:
+            pos = self.get_body_com('drawer_link') + np.array([-.16, .0, .05])
+        else:
+            pos = self.get_body_com('drawer_link') + np.array([.0, +.16, .05])
+        return pos
 
     def _get_quat_objects(self):
-        return np.zeros(4)
+        return self.get_body_quat('drawer_link')
 
     def _set_obj_xyz(self, pos):
         qpos = self.data.qpos.flat.copy()
         qvel = self.data.qvel.flat.copy()
         qpos[9] = pos
         self.set_state(qpos, qvel)
-
-    def reset_model(self):
+    
+    def _random_init_hand_pos(self, pos=None):
+        if pos is None:
+            x_range = [-0.5, 0.5]
+            y_range = [0.25, 0.85]
+            z = 0.3
+            x = random.random() * (x_range[1] - x_range[0]) + x_range[0]
+            y = random.random() * (y_range[1] - y_range[0]) + y_range[0]
+            pos = [x, y, z]
+        self.hand_init_pos = pos
         self._reset_hand()
 
-        # Compute nightstand position
-        self.obj_init_pos = self._get_state_rand_vec() if self.random_init \
-            else self.init_config['obj_init_pos']
-        # Set mujoco body to computed position
-        self.sim.model.body_pos[self.model.body_name2id(
-            'drawer'
-        )] = self.obj_init_pos
-        # Set _target_pos to current drawer position (closed)
-        self._target_pos = self.obj_init_pos + np.array([.0, -.16, .09])
-        # Pull drawer out all the way and mark its starting position
-        self._set_obj_xyz(-self.maxDist)
+    def _random_init_drawer_pos(self, pos=None):
+        if self.quat_index == 0:
+            x_range = [-0.45, 0.45]
+            y_range = [0.65, 0.85]
+        elif self.quat_index == 1:
+            x_range = [-0.45, 0.25]
+            y_range = [0.4, 0.8]
+        elif self.quat_index == 2:
+            x_range = [-0.25, 0.45]
+            y_range = [0.4, 0.8]
+        else:
+            x_range = [-0.45, 0.45]
+            y_range = [0.35, 0.55]
+        if pos is None:
+            z = 0.
+            x = random.random() * (x_range[1] - x_range[0]) + x_range[0]
+            y = random.random() * (y_range[1] - y_range[0]) + y_range[0]
+            pos = np.array([x, y, z])
+        else:
+            pos = np.array(pos)
+        self.sim.model.body_pos[
+            self.sim.model.body_name2id('drawer')
+        ] = pos
+        return pos
+
+    def _random_init_quat(self, index=None):
+        init_quat_list = QUAT_LIST[:4]
+        if index is None:
+            index = random.randint(0, len(init_quat_list)-1)
+        self.quat_index = index
+        quat = np.array(init_quat_list[index])
+        self.sim.model.body_quat[
+            self.sim.model.body_name2id('drawer')
+        ] = quat
+        return quat 
+
+    def _random_init_color(self):
+        rgb = random.choice(RGB_COLOR_LIST)
+        rgba = np.array(list(rgb) + [1.])
+
+        self.sim.model.geom_rgba[
+            self.sim.model.geom_name2id('drawercase_tmp')
+        ] = rgba
+        self.sim.model.geom_rgba[
+            self.sim.model.geom_name2id('drawer_tmp')
+        ] = rgba
+    
+    def _get_quat_index(self):
+        eps = 1e-5
+        quat = self.get_body_quat('drawer_link')
+        quat_list = QUAT_LIST[:4]
+        for i in range(len(quat_list)):
+            if np.sum((quat - np.array(quat_list[i])) ** 2) < eps:
+                # print("index:", i)
+                self.quat_index = i
+                break
+
+    def reset_model(self):
+
+        self.obj_init_quat = self._random_init_quat()
+        self.obj_init_pos = self._random_init_drawer_pos()
+        self._set_obj_xyz(-self.maxDist * random.random())
+
+        self._random_init_color()
+        self._random_init_hand_pos()
+
+        self._get_quat_index()
+        if self.quat_index == 0:
+            self._target_pos = self.get_body_com('drawer') + np.array([.0, -.16, .09])
+        elif self.quat_index == 1:
+            self._target_pos = self.get_body_com('drawer') + np.array([+.16, .0, .09])
+        elif self.quat_index == 2:
+            self._target_pos = self.get_body_com('drawer') + np.array([-.16, .0, .09])
+        else:
+            self._target_pos = self.get_body_com('drawer') + np.array([.0, +.16, .09])
+        
         self.obj_init_pos = self._get_pos_objects()
 
         return self._get_obs()
