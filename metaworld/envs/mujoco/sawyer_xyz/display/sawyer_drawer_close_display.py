@@ -42,7 +42,7 @@ class SawyerDrawerCloseEnvV2Display(SawyerXYZEnv):
         )
         self.goal_space = Box(np.array(goal_low), np.array(goal_high))
 
-        self.maxDist = 0.15
+        self.maxDist = 0.16
         self.target_reward = 1000 * self.maxDist + 1000 * 2
 
     @property
@@ -168,7 +168,8 @@ class SawyerDrawerCloseEnvV2Display(SawyerXYZEnv):
 
         self.obj_init_quat = self._random_init_quat()
         self.obj_init_pos = self._random_init_drawer_pos()
-        self._set_obj_xyz(-self.maxDist * random.random())
+        # self._set_obj_xyz(-self.maxDist * random.random())
+        self._set_obj_xyz(-self.maxDist + (random.random() * 0.1))
 
         self._random_init_color()
         self._random_init_hand_pos()
@@ -184,10 +185,15 @@ class SawyerDrawerCloseEnvV2Display(SawyerXYZEnv):
             self._target_pos = self.get_body_com('drawer') + np.array([.0, +.16, .09])
         
         self.obj_init_pos = self._get_pos_objects()
+        self.prev_obs = self._get_curr_obs_combined_no_goal()
 
         return self._get_obs()
 
     def compute_reward(self, action, obs):
+        # print('drawer:', self.get_body_com('drawer'))
+        # print('drawer_link:', self.get_body_com('drawer_link'))
+        # print('obj_init_pos:', self.obj_init_pos)
+        # print('target_pos:', self._target_pos)
         obj = obs[4:7]
 
         tcp = self.tcp_center
