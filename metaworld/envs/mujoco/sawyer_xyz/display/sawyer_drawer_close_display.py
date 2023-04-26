@@ -7,6 +7,7 @@ from metaworld.envs.asset_path_utils import full_display_path_for
 from metaworld.envs.mujoco.sawyer_xyz.sawyer_xyz_env import SawyerXYZEnv, _assert_task_is_set
 
 from metaworld.envs.display_utils import RGB_COLOR_LIST, QUAT_LIST
+from metaworld.envs.display_utils import random_grid_pos
 
 
 class SawyerDrawerCloseEnvV2Display(SawyerXYZEnv):
@@ -122,8 +123,9 @@ class SawyerDrawerCloseEnvV2Display(SawyerXYZEnv):
             y_range = [0.35, 0.55]
         if pos is None:
             z = 0.
-            x = random.random() * (x_range[1] - x_range[0]) + x_range[0]
-            y = random.random() * (y_range[1] - y_range[0]) + y_range[0]
+            x, y = random_grid_pos(x_range, y_range)
+            # x = random.random() * (x_range[1] - x_range[0]) + x_range[0]
+            # y = random.random() * (y_range[1] - y_range[0]) + y_range[0]
             pos = np.array([x, y, z])
         else:
             pos = np.array(pos)
