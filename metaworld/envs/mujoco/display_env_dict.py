@@ -11,7 +11,8 @@ from metaworld.envs.mujoco.sawyer_xyz.display import (
     SawyerDrawerOpenEnvV2Display,
     SawyerShelfPlaceEnvV2Display,
 
-    SawyerDrawerPlaceEnvV2Display
+    SawyerDrawerPlaceEnvV2Display,
+    SawyerDrawerPickEnvV2Display
 )
 
 ALL_DISPLAY_ENVIRONMENTS = OrderedDict((
@@ -25,6 +26,7 @@ ALL_DISPLAY_ENVIRONMENTS = OrderedDict((
     ('shelf-place-v2-display', SawyerShelfPlaceEnvV2Display),
 
     ('drawer-place-v2-display', SawyerDrawerPlaceEnvV2Display),
+    ('drawer-pick-v2-display', SawyerDrawerPickEnvV2Display),
 ))
 
 def create_observable_goal_envs():
