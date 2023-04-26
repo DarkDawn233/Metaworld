@@ -192,11 +192,11 @@ class SawyerDrawerPlaceEnvV2Display(SawyerXYZEnv):
 
     def reset_model(self):
 
-        self.drawer_init_quat = self._random_drawer_init_quat(0)
+        self.drawer_init_quat = self._random_drawer_init_quat()
         self._get_drawer_quat_index()
         self.drawer_init_pos = self._random_init_drawer_pos()
         self.mug_init_pos = self._random_init_mug_pos()
-        print("mug_pos:", self.mug_init_pos)
+        # print("mug_pos:", self.mug_init_pos)
         # self._set_obj_xyz(-self.maxDist * random.random())
         self._set_obj_xyz(-self.maxDist + (random.random() * 0.01), self.mug_init_pos)
         # self._target_pos = self.get_body_com('drawer_link')
