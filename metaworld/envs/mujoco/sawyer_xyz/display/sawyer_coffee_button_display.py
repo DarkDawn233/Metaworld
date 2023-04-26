@@ -4,6 +4,8 @@ from gym.spaces import Box
 from metaworld.envs import reward_utils
 from metaworld.envs.asset_path_utils import full_display_path_for
 from metaworld.envs.mujoco.sawyer_xyz.sawyer_xyz_env import SawyerXYZEnv, _assert_task_is_set
+from metaworld.envs.display_utils import RGB_COLOR_LIST, QUAT_LIST
+import random
 
 
 class SawyerCoffeeButtonEnvV2Display(SawyerXYZEnv):
@@ -29,7 +31,7 @@ class SawyerCoffeeButtonEnvV2Display(SawyerXYZEnv):
 
         self.init_config = {
             'obj_init_pos': np.array([0, 0.9, 0.28]),
-            'obj_init_angle': 0.3,
+            'obj_init_angle': 0.0,
             'hand_init_pos': np.array([0., .4, .2]),
         }
         self.goal = np.array([0, 0.78, 0.33])
@@ -41,6 +43,7 @@ class SawyerCoffeeButtonEnvV2Display(SawyerXYZEnv):
             np.array(obj_low),
             np.array(obj_high),
         )
+        self.num_resets = 0
         self.goal_space = Box(np.array(goal_low), np.array(goal_high))
 
     @property
@@ -82,7 +85,10 @@ class SawyerCoffeeButtonEnvV2Display(SawyerXYZEnv):
         return self._get_site_pos('buttonStart')
 
     def _get_quat_objects(self):
-        return np.array([1., 0., 0., 0.])
+        if hasattr(self, 'quat'):
+            return self.quat
+        else:
+            return np.array([1., 0., 0., 0.])
 
     def _set_obj_xyz(self, pos):
         qpos = self.data.qpos.flatten()
@@ -91,22 +97,144 @@ class SawyerCoffeeButtonEnvV2Display(SawyerXYZEnv):
         qvel[9:15] = 0
         self.set_state(qpos, qvel)
 
+    # def reset_model(self):
+    #     self._reset_hand()
+    #     self.sim.model.body_pos[self.model.body_name2id('coffee_machine')] = \
+    #         self.init_config['obj_init_pos'] - np.array([0, 0, 0.0])
+    #     self._target_pos = \
+    #         (self.sim.model.site_pos[
+    #             self.model.site_name2id('coffee_goal')]
+    #          + self.sim.model.body_pos[
+    #             self.model.body_name2id('coffee_machine')]
+    #          + np.array([0, 0, 0]))
+    #     # self.obj_init_pos = self.adjust_initObjPos(
+    #     #     self.init_config['obj_init_pos'])
+    #     self.obj_init_angle = self.init_config['obj_init_angle']
+    #     print('First: ', self.obj_init_pos)
+    #     if self.random_init:
+    #         goal_pos = self._get_state_rand_vec()
+    #         # while np.linalg.norm(goal_pos[:2] - goal_pos[-3:-1]) < 0.1:
+    #         #     goal_pos = self._get_state_rand_vec()
+    #         base_coffee_machine_pos = goal_pos - np.array([0.2, 0.2, 0.0])
+    #         self.obj_init_pos = np.concatenate((base_coffee_machine_pos[:2],
+    #                                             [self.obj_init_pos[-1]]))
+    #         print('Second: ', self.obj_init_pos)
+    #         self.sim.model.body_pos[
+    #             self.model.body_name2id('coffee_machine')] = \
+    #                 base_coffee_machine_pos[-3:]
+    #         self._target_pos = \
+    #             (self.sim.model.site_pos[
+    #                 self.model.site_name2id('coffee_goal')]
+    #              + self.sim.model.body_pos[
+    #                 self.model.body_name2id('coffee_machine')]
+    #              + np.array([0, 0, 0]))
+
+    #     self._set_obj_xyz(self.obj_init_pos)
+    #     self.num_resets += 1
+
+    #     return self._get_obs()
+
+    # def reset_model(self):
+    #     self._reset_hand()
+
+    #     print('Running reset.')
+    #     print(f'First init pos: {self.obj_init_pos}.')
+    #     self.obj_init_pos = self._get_state_rand_vec() if self.random_init \
+    #         else self.init_config['obj_init_pos']
+    #     print(f'Second init pos: {self.obj_init_pos}.')
+    #     self.sim.model.body_pos[self.model.body_name2id(
+    #         'coffee_machine'
+    #     )] = self.obj_init_pos
+
+    #     pos_mug = self.obj_init_pos + np.array([.0, -.22, .0])
+    #     self._set_obj_xyz(pos_mug)
+
+    #     pos_button = self.obj_init_pos + np.array([.0, -.22, .3])
+    #     self._target_pos = pos_button + np.array([.0, self.max_dist, .0])
+
+    #     return self._get_obs()
+
     def reset_model(self):
         self._reset_hand()
+        self._random_init_color()
 
-        self.obj_init_pos = self._get_state_rand_vec() if self.random_init \
-            else self.init_config['obj_init_pos']
+        print('Running reset.')
+        print(f'First init pos: {self.obj_init_pos}.')
+        if self.random_init:
+            # obj_init_pos = self.obj_init_pos
+            # obj_init_pos = np.array([0.5, 0.85, 0.0])
+            self.obj_init_pos = self.random_init_coffee_machine_position()
+        else:
+            self.obj_init_pos = self.init_config['obj_init_pos']
+        print(f'Second init pos: {self.obj_init_pos}.')
         self.sim.model.body_pos[self.model.body_name2id(
             'coffee_machine'
         )] = self.obj_init_pos
+        quat = self._random_init_quat()
 
-        pos_mug = self.obj_init_pos + np.array([.0, -.22, .0])
+        if all(quat == QUAT_LIST[0]):
+            pos_mug = self.obj_init_pos + np.array([.0, -.22, .0])
+            pos_button = self.obj_init_pos + np.array([.0, -.22, .3])
+            self._target_pos = pos_button + np.array([.0, self.max_dist, .0])
+        elif all(quat == QUAT_LIST[1]):
+            pos_mug = self.obj_init_pos + np.array([.22, .0, .0])
+            pos_button = self.obj_init_pos + np.array([.22, .0, .3])
+            self._target_pos = pos_button + np.array([-self.max_dist, .0, .0])
+        elif all(quat == QUAT_LIST[2]):
+            pos_mug = self.obj_init_pos + np.array([-.22, .0, .0])
+            pos_button = self.obj_init_pos + np.array([-.22, .0, .3])
+            self._target_pos = pos_button + np.array([self.max_dist, .0, .0])
         self._set_obj_xyz(pos_mug)
 
-        pos_button = self.obj_init_pos + np.array([.0, -.22, .3])
-        self._target_pos = pos_button + np.array([.0, self.max_dist, .0])
-
+        # pos_button = self.obj_init_pos + np.array([.0, -.22, .3])
+        # self._target_pos = pos_button + np.array([.0, self.max_dist, .0])
+        self.num_resets += 1
         return self._get_obs()
+
+    def random_init_coffee_machine_position(self):
+        obj_init_pos = np.random.uniform((-0.5, 0.60, 0), (0.5, 0.85, 0))
+        if obj_init_pos[1] < 0.70 and -0.2 < obj_init_pos[0] < 0.2:
+            obj_init_pos = self.random_init_coffee_machine_position()
+        if self.num_resets:
+            print(f'Environment has been reset for '
+                  f'{self.num_resets} times, break.')
+            return self.obj_init_pos
+        return obj_init_pos
+
+    def _random_init_quat(self, index=None):
+        if self.obj_init_pos[0] > 0:
+            init_quat_list = [QUAT_LIST[0], QUAT_LIST[2]]
+        else:
+            init_quat_list = [QUAT_LIST[0], QUAT_LIST[1]]
+        # init_quat_list = QUAT_LIST[:2]
+        if index is None:
+            index = random.randint(0, len(init_quat_list)-1)
+        self.quat_index = index
+        quat = np.array(init_quat_list[index])
+        self.sim.model.body_quat[
+            self.sim.model.body_name2id('coffee_machine')] = quat
+        self.quat = quat
+        return quat
+
+    def _random_init_color(self):
+        # rgb = random.choice(RGB_COLOR_LIST)
+        # rgba = np.array(list(rgb) + [1.])
+
+        def get_random_rgba():
+            return np.array(list(random.choice(RGB_COLOR_LIST)) + [1.])
+
+        def set_model_rgba(model_name: str):
+            if model_name == 'coffee_machine_body':
+                model_name = ['coffee_machine_body1', 'coffee_machine_body2']
+            else:
+                model_name = [model_name]
+            rgba = get_random_rgba()
+            for name in model_name:
+                self.sim.model.geom_rgba[
+                    self.sim.model.geom_name2id(name)] = rgba
+
+        for model_name in ['coffee_machine_body', 'mug', 'handle']:
+            set_model_rgba(model_name)
 
     def compute_reward(self, action, obs):
         del action
@@ -115,7 +243,16 @@ class SawyerCoffeeButtonEnvV2Display(SawyerXYZEnv):
 
         tcp_to_obj = np.linalg.norm(obj - tcp)
         tcp_to_obj_init = np.linalg.norm(obj - self.init_tcp)
-        obj_to_target = abs(self._target_pos[1] - obj[1])
+        if all(self.quat == QUAT_LIST[0]):
+            obj_to_target = max(abs(self._target_pos[0] - obj[0]),
+                                abs(self._target_pos[1] - obj[1]))
+            # obj_to_target = abs(self._target_pos[1] - obj[1])
+        elif all(self.quat == QUAT_LIST[1]) or all(self.quat == QUAT_LIST[2]):
+            obj_to_target = max(abs(self._target_pos[0] - obj[0]),
+                                abs(self._target_pos[1] - obj[1]))
+            # obj_to_target = abs(self._target_pos[0] - obj[0])
+        else:
+            raise ValueError(f'Got unrecognizable quat: {self.quat}.')
 
         tcp_closed = max(obs[3], 0.0)
         near_button = reward_utils.tolerance(
