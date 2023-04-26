@@ -25,10 +25,10 @@ class SawyerDrawerPlaceV2DisplayPolicy(Policy):
     def get_action(self, obs, info={}):
         o_d = self._parse_obs(obs)
 
-        print("pos_hand:", o_d['hand_pos'])
-        print("pos_mug:", o_d['mug_pos'])
-        print("grasp:", o_d['grasp_info'])
-        print("pos_goal:", o_d['goal_pos'])
+        # print("pos_hand:", o_d['hand_pos'])
+        # print("pos_mug:", o_d['mug_pos'])
+        # print("grasp:", o_d['grasp_info'])
+        # print("pos_goal:", o_d['goal_pos'])
 
         action = Action({
             'delta_pos': np.arange(3),
