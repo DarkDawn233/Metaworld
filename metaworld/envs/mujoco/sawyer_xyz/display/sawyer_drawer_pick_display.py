@@ -4,13 +4,15 @@ from gym.spaces import Box
 
 from metaworld.envs import reward_utils
 from metaworld.envs.asset_path_utils import full_display_path_for
-from metaworld.envs.mujoco.sawyer_xyz.sawyer_xyz_env import SawyerXYZEnv, _assert_task_is_set
+from metaworld.envs.mujoco.sawyer_xyz.sawyer_xyz_env import _assert_task_is_set
+
+from metaworld.envs.mujoco.sawyer_xyz.display.sawyer_base import SawyerXYZEnvDisplay
 
 from metaworld.envs.display_utils import RGB_COLOR_LIST, QUAT_LIST
 from metaworld.envs.display_utils import random_grid_pos
 
 
-class SawyerDrawerPickEnvV2Display(SawyerXYZEnv):
+class SawyerDrawerPickEnvV2Display(SawyerXYZEnvDisplay):
     _TARGET_RADIUS = 0.01
     def __init__(self):
 
@@ -194,6 +196,8 @@ class SawyerDrawerPickEnvV2Display(SawyerXYZEnv):
                 break
 
     def reset_model(self):
+
+        self._random_table_and_floor()
 
         self.drawer_init_quat = self._random_drawer_init_quat()
         self._get_drawer_quat_index()

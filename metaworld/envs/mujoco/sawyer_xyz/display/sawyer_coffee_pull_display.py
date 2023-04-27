@@ -4,10 +4,10 @@ from scipy.spatial.transform import Rotation
 
 from metaworld.envs import reward_utils
 from metaworld.envs.asset_path_utils import full_display_path_for
-from metaworld.envs.mujoco.sawyer_xyz.sawyer_xyz_env import SawyerXYZEnv, _assert_task_is_set
+from metaworld.envs.mujoco.sawyer_xyz.sawyer_xyz_env import _assert_task_is_set
 
-
-class SawyerCoffeePullEnvV2Display(SawyerXYZEnv):
+from metaworld.envs.mujoco.sawyer_xyz.display.sawyer_base import SawyerXYZEnvDisplay
+class SawyerCoffeePullEnvV2Display(SawyerXYZEnvDisplay):
 
     def __init__(self):
 

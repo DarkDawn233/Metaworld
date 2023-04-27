@@ -1,15 +1,13 @@
 import numpy as np
-import random
 from gym.spaces import Box
 
-from metaworld.envs import reward_utils
 from metaworld.envs.asset_path_utils import full_display_path_for
-from metaworld.envs.mujoco.sawyer_xyz.sawyer_xyz_env import SawyerXYZEnv, _assert_task_is_set
+from metaworld.envs.mujoco.sawyer_xyz.sawyer_xyz_env import _assert_task_is_set
 
-from metaworld.envs.display_utils import RGB_COLOR_LIST, QUAT_LIST
+from metaworld.envs.mujoco.sawyer_xyz.display.sawyer_base import SawyerXYZEnvDisplay
 
 
-class SawyerMugEnvV2Display(SawyerXYZEnv):
+class SawyerMugEnvV2Display(SawyerXYZEnvDisplay):
     _TARGET_RADIUS = 0.01
     def __init__(self, init_pos=None):
 
@@ -98,12 +96,16 @@ class SawyerMugEnvV2Display(SawyerXYZEnv):
 
     def reset_model(self):
         # self._reset_hand()
+        self._random_table_and_floor()
         self.obj_init_pos = self._random_init_mug_pos()
         self._set_obj_xyz(self.obj_init_pos)
         self._reset_hand()
         
         self._target_pos = self.obj_init_pos
         self.prev_obs = self._get_curr_obs_combined_no_goal()
+
+        # modder1 = TextureModder(self.sim)
+        # modder2 = MaterialModder(self.sim)
 
         print("mug_pos:", self.get_body_com('obj'))
 
