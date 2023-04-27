@@ -45,6 +45,7 @@ class SawyerCoffeeButtonEnvV2Display(SawyerXYZEnv):
         )
         self.num_resets = 0
         self.goal_space = Box(np.array(goal_low), np.array(goal_high))
+        self.succeed = False
 
     @property
     def model_name(self):
@@ -72,7 +73,33 @@ class SawyerCoffeeButtonEnvV2Display(SawyerXYZEnv):
             'unscaled_reward': reward,
         }
 
+        # info['after_success'] = self._get_after_success(info)
+        if info['success']:
+            self.succeed = True
+            self._target_pos[2] = 0.37
+            hand_pos = self.get_endeff_pos()
+            info['after_success'] = info['success'] and (hand_pos[2] >= 0.29)
+        if self.succeed:
+            info['success'] = True
+            reward = 10
+            hand_pos = self.get_endeff_pos()
+            info['after_success'] = info['success'] and (hand_pos[2] >= 0.29)
+        # after_reward = self._get_after_reward(info)
+
+        # return reward + after_reward, info
         return reward, info
+
+    def _get_after_success(self, info):
+        hand_pos = self.get_endeff_pos()
+        return info['success'] and (hand_pos[2] >= 0.29)
+
+    def _get_after_reward(self, info):
+        if not info['success']:
+            return 0
+        else:
+            self.succeed = True
+            hand_pos = self.get_endeff_pos()
+            return 2 * hand_pos[2] / 0.3
 
     @property
     def _target_site_config(self):

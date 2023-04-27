@@ -18,23 +18,25 @@ class SawyerCoffeeButtonV2DisplayPolicy(Policy):
             'unused_info': obs[11:],
         }
 
-    def get_action(self, obs, *args):
+    def get_action(self, obs, info):
         o_d = self._parse_obs(obs)
+        success = info.get('success', False)
 
         action = Action({
             'delta_pos': np.arange(3),
             'grab_effort': 3
         })
 
-        action['delta_pos'] = move(o_d['hand_pos'], to_xyz=self._desired_pos(o_d), p=10.)
+        action['delta_pos'] = move(o_d['hand_pos'], to_xyz=self._desired_pos(o_d, success), p=10.)
         action['grab_effort'] = -1.
 
         return action.array
 
     @staticmethod
-    def _desired_pos(o_d):
+    def _desired_pos(o_d, success=False):
         pos_curr = o_d['hand_pos']
-        pos_button = o_d['button_pos'] + np.array([.0, .0, -.07])
+        pos_button = o_d['button_pos']
+        pos_button += 0 if success else np.array([.0, .0, -.07])
         button_quat = o_d['button_quat']
 
         print(f'Current position: {pos_curr}\n Button position: {pos_button}.')
