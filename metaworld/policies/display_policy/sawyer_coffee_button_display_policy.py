@@ -36,7 +36,7 @@ class SawyerCoffeeButtonV2DisplayPolicy(Policy):
     def _desired_pos(o_d, success=False):
         pos_curr = o_d['hand_pos']
         pos_button = o_d['button_pos']
-        pos_button += 0 if success else np.array([.0, .0, -.07])
+        pos_button += np.array([.0, .0, .1]) if success else np.array([.0, .0, -.07])
         button_quat = o_d['button_quat']
 
         print(f'Current position: {pos_curr}\n Button position: {pos_button}.')

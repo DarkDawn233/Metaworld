@@ -78,12 +78,12 @@ class SawyerCoffeeButtonEnvV2Display(SawyerXYZEnv):
             self.succeed = True
             self._target_pos[2] = 0.37
             hand_pos = self.get_endeff_pos()
-            info['after_success'] = info['success'] and (hand_pos[2] >= 0.29)
+            info['after_success'] = info['success'] and (hand_pos[2] >= 0.39)
         if self.succeed:
             info['success'] = True
             reward = 10
             hand_pos = self.get_endeff_pos()
-            info['after_success'] = info['success'] and (hand_pos[2] >= 0.29)
+            info['after_success'] = info['success'] and (hand_pos[2] >= 0.39)
         # after_reward = self._get_after_reward(info)
 
         # return reward + after_reward, info
