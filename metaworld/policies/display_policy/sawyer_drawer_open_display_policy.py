@@ -70,7 +70,10 @@ class SawyerDrawerOpenV2DisplayPolicy(Policy):
             else:
                 return pos_drwr + np.array([0., +0.08, 0.])
         elif quat_index == 1:
-            target_pos_drwr = pos_drwr + np.array([-0.04, -0.03, 0])
+            if pos_drwr[1] < 0.5:
+                target_pos_drwr = pos_drwr + np.array([-0.04, +0.03, 0])
+            else:
+                target_pos_drwr = pos_drwr + np.array([-0.04, -0.03, 0])
             if np.linalg.norm(pos_curr[:2] - target_pos_drwr[:2]) > 0.03:
                 return target_pos_drwr + np.array([0., 0., 0.3])
             elif abs(pos_curr[2] - pos_drwr[2]) > 0.04:
@@ -78,7 +81,10 @@ class SawyerDrawerOpenV2DisplayPolicy(Policy):
             else:
                 return target_pos_drwr + np.array([+0.08, 0., 0.])
         else:
-            target_pos_drwr = pos_drwr + np.array([+0.04, -0.03, 0])
+            if pos_drwr[1] < 0.5:
+                target_pos_drwr = pos_drwr + np.array([+0.04, +0.03, 0])
+            else:
+                target_pos_drwr = pos_drwr + np.array([+0.04, -0.03, 0])
             if np.linalg.norm(pos_curr[:2] - target_pos_drwr[:2]) > 0.03:
                 return target_pos_drwr + np.array([0., 0., 0.3])
             elif abs(pos_curr[2] - pos_drwr[2]) > 0.04:

@@ -216,7 +216,7 @@ class SawyerDrawerOpenEnvV2Display(SawyerXYZEnvDisplay):
     def compute_reward(self, action, obs):
         gripper = obs[:3]
         handle = obs[4:7]
-        print("drawer_link_len:", self.sim.data.qpos[9])
+        # print("drawer_link_len:", self.sim.data.qpos[9])
         # print('drawer:', self.get_body_com('drawer'))
         # print('drawer_link:', self.get_body_com('drawer_link'))
         # print('_target_pos:', self._target_pos)
