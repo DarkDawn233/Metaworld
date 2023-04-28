@@ -4,11 +4,14 @@ import random
 
 from metaworld.envs import reward_utils
 from metaworld.envs.asset_path_utils import full_display_path_for
-from metaworld.envs.mujoco.sawyer_xyz.sawyer_xyz_env import SawyerXYZEnv, _assert_task_is_set
+from metaworld.envs.mujoco.sawyer_xyz.sawyer_xyz_env import _assert_task_is_set
+
+from metaworld.envs.mujoco.sawyer_xyz.display.sawyer_base import SawyerXYZEnvDisplay
 
 from metaworld.envs.display_utils import RGB_COLOR_LIST, QUAT_LIST
+from metaworld.envs.display_utils import random_grid_pos
 
-class SawyerDrawerOpenEnvV2Display(SawyerXYZEnv):
+class SawyerDrawerOpenEnvV2Display(SawyerXYZEnvDisplay):
     def __init__(self):
 
         hand_low = (-0.5, 0.40, 0.05)
@@ -126,8 +129,9 @@ class SawyerDrawerOpenEnvV2Display(SawyerXYZEnv):
             y_range = [0.35, 0.55]
         if pos is None:
             z = 0.
-            x = random.random() * (x_range[1] - x_range[0]) + x_range[0]
-            y = random.random() * (y_range[1] - y_range[0]) + y_range[0]
+            x, y = random_grid_pos(x_range, y_range)
+            # x = random.random() * (x_range[1] - x_range[0]) + x_range[0]
+            # y = random.random() * (y_range[1] - y_range[0]) + y_range[0]
             pos = np.array([x, y, z])
         else:
             pos = np.array(pos)
@@ -170,6 +174,8 @@ class SawyerDrawerOpenEnvV2Display(SawyerXYZEnv):
 
     def reset_model(self):
 
+        self._random_table_and_floor()
+
         self.obj_init_quat = self._random_init_quat()
         self.obj_init_pos = self._random_init_drawer_pos()
         self._set_obj_xyz(-0.1 * random.random())
@@ -210,6 +216,7 @@ class SawyerDrawerOpenEnvV2Display(SawyerXYZEnv):
     def compute_reward(self, action, obs):
         gripper = obs[:3]
         handle = obs[4:7]
+        print("drawer_link_len:", self.sim.data.qpos[9])
         # print('drawer:', self.get_body_com('drawer'))
         # print('drawer_link:', self.get_body_com('drawer_link'))
         # print('_target_pos:', self._target_pos)

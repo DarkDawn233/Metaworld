@@ -31,7 +31,7 @@ class SawyerDrawerCloseV2DisplayPolicy(Policy):
             action['grab_effort'] = -1.
             return action.array
 
-        action['delta_pos'] = move(o_d['hand_pos'], to_xyz=self._desired_pos(o_d), p=25.)
+        action['delta_pos'] = move(o_d['hand_pos'], to_xyz=self._desired_pos(o_d), p=10.)
         action['grab_effort'] = 1.
 
         return action.array

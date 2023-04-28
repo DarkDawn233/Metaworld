@@ -3,10 +3,12 @@ from gym.spaces import Box
 
 from metaworld.envs import reward_utils
 from metaworld.envs.asset_path_utils import full_v2_path_for
-from metaworld.envs.mujoco.sawyer_xyz.sawyer_xyz_env import SawyerXYZEnv, _assert_task_is_set
+from metaworld.envs.mujoco.sawyer_xyz.sawyer_xyz_env import _assert_task_is_set
+
+from metaworld.envs.mujoco.sawyer_xyz.display.sawyer_base import SawyerXYZEnvDisplay
 
 
-class SawyerEnvV2Display(SawyerXYZEnv):
+class SawyerEnvV2Display(SawyerXYZEnvDisplay):
     def __init__(self):
 
         hand_low = (-0.5, 0.40, 0.05)

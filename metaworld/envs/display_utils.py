@@ -18,3 +18,17 @@ QUAT_LIST = [
     [np.sin(np.pi/4), 0., 0., -np.sin(np.pi/4)],    # 俯视逆时针旋转90
     [0., 0., 0., 1.],                               # 俯视旋转180
 ]
+
+
+def random_grid_pos(x_range, y_range, forbid_list=[]):
+    while True:
+        x = np.random.randint(int(np.round(x_range[0]*100)), int(np.round(x_range[1]*100))) / 100
+        y = np.random.randint(int(np.round(y_range[0]*100)), int(np.round(y_range[1]*100))) / 100
+        flag = True
+        for (min_x, max_x), (min_y, max_y) in forbid_list:
+            if min_x < x < max_x and min_y < y < max_y:
+                flag = False
+                break
+        if flag:
+            break
+    return x, y

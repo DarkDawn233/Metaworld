@@ -7,11 +7,29 @@
                width="800" height="800" mark="random" markrgb=".8 .8 .8"/> -->
         <texture type="skybox" builtin="gradient" rgb1=".50 .495 .48" rgb2=".50 .495 .48" width="32" height="32"/>
         <texture name="T_table" type="cube" file="../textures/wood2.png"/>
+        <texture name="T_table_2" type="cube" file="../textures/wood_light.png"/>
+        <texture name="T_table_3" type="cube" file="../textures/wood1.png"/>
+        <texture name="T_table_4" type="cube" file="../textures/wood3.png"/>
+
         <texture name="T_floor" type="2d" file="../textures/floor2.png"/>
+        <texture name="T_floor_2" type="2d" file="../textures/floor1.png"/>
+        <texture name="T_floor_3" type="2d" file="../textures/granite.png"/>
+        <texture name="T_floor_4" type="2d" file="../textures/marble.png"/>
 
         <material name="basic_floor" texture="T_floor" texrepeat="12 12" shininess=".3" specular="0.5"
                   reflectance="0.2"/>
+        <material name="basic_floor_2" texture="T_floor_2" texrepeat="12 12" shininess=".3" specular="0.5"
+                  reflectance="0.2"/>
+        <material name="basic_floor_3" texture="T_floor_3" texrepeat="12 12" shininess=".3" specular="0.5"
+                  reflectance="0.2"/>
+        <material name="basic_floor_4" texture="T_floor_4" texrepeat="12 12" shininess=".3" specular="0.5"
+                  reflectance="0.2"/>
+      
         <material name="table_wood" texture="T_table" shininess=".3" specular="0.5"/>
+        <material name="table_wood_2" texture="T_table_2" shininess=".3" specular="0.5"/>
+        <material name="table_wood_3" texture="T_table_3" shininess=".3" specular="0.5"/>
+        <material name="table_wood_4" texture="T_table_4" shininess=".3" specular="0.5"/>
+
         <material name="table_col" rgba="0.3 0.3 1.0 0.5" shininess="0" specular="0"/>
 
         <mesh file="../objects/meshes/table/tablebody.stl" name="tablebody" scale="1 1 1"/>
@@ -38,9 +56,9 @@
         <light castshadow="false" directional='true' diffuse='.3 .3 .3' specular='0.3 0.3 0.3' pos='0 1 1'
                dir='0 -1 -1'/>
         <body name="tablelink" pos="0 .6 0">
-            <geom material="table_wood" group="1" type="box" size=".7 .4 .027" pos="0 0 -.027" conaffinity="0"
+            <geom name="table_top" material="table_wood" group="1" type="box" size=".7 .4 .027" pos="0 0 -.027" conaffinity="0"
                   contype="0"/>
-            <geom material="table_wood" group="1" mesh="tablebody" pos="0 0 -0.65" type="mesh" conaffinity="0"
+            <geom name="table_body" material="table_wood" group="1" mesh="tablebody" pos="0 0 -0.65" type="mesh" conaffinity="0"
                   contype="0"/>
             <geom material="table_col" group="4" pos="0.0 0.0 -0.46" size="0.7 0.4 0.46" type="box" conaffinity="1"
                   contype="0"/>

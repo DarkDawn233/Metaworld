@@ -4,12 +4,15 @@ from gym.spaces import Box
 
 from metaworld.envs import reward_utils
 from metaworld.envs.asset_path_utils import full_display_path_for
-from metaworld.envs.mujoco.sawyer_xyz.sawyer_xyz_env import SawyerXYZEnv, _assert_task_is_set
+from metaworld.envs.mujoco.sawyer_xyz.sawyer_xyz_env import _assert_task_is_set
+
+from metaworld.envs.mujoco.sawyer_xyz.display.sawyer_base import SawyerXYZEnvDisplay
 
 from metaworld.envs.display_utils import RGB_COLOR_LIST, QUAT_LIST
+from metaworld.envs.display_utils import random_grid_pos
 
 
-class SawyerDrawerCloseEnvV2Display(SawyerXYZEnv):
+class SawyerDrawerCloseEnvV2Display(SawyerXYZEnvDisplay):
     _TARGET_RADIUS = 0.01
     def __init__(self):
 
@@ -122,8 +125,9 @@ class SawyerDrawerCloseEnvV2Display(SawyerXYZEnv):
             y_range = [0.35, 0.55]
         if pos is None:
             z = 0.
-            x = random.random() * (x_range[1] - x_range[0]) + x_range[0]
-            y = random.random() * (y_range[1] - y_range[0]) + y_range[0]
+            x, y = random_grid_pos(x_range, y_range)
+            # x = random.random() * (x_range[1] - x_range[0]) + x_range[0]
+            # y = random.random() * (y_range[1] - y_range[0]) + y_range[0]
             pos = np.array([x, y, z])
         else:
             pos = np.array(pos)
@@ -165,6 +169,8 @@ class SawyerDrawerCloseEnvV2Display(SawyerXYZEnv):
                 break
 
     def reset_model(self):
+
+        self._random_table_and_floor()
 
         self.obj_init_quat = self._random_init_quat()
         self.obj_init_pos = self._random_init_drawer_pos()

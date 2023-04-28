@@ -3,12 +3,13 @@ from gym.spaces import Box
 
 from metaworld.envs import reward_utils
 from metaworld.envs.asset_path_utils import full_display_path_for
-from metaworld.envs.mujoco.sawyer_xyz.sawyer_xyz_env import SawyerXYZEnv, _assert_task_is_set
 from metaworld.envs.display_utils import RGB_COLOR_LIST, QUAT_LIST
 import random
+from metaworld.envs.mujoco.sawyer_xyz.sawyer_xyz_env import _assert_task_is_set
 
+from metaworld.envs.mujoco.sawyer_xyz.display.sawyer_base import SawyerXYZEnvDisplay
 
-class SawyerCoffeeButtonEnvV2Display(SawyerXYZEnv):
+class SawyerCoffeeButtonEnvV2Display(SawyerXYZEnvDisplay):
 
     def __init__(self):
 
@@ -88,18 +89,6 @@ class SawyerCoffeeButtonEnvV2Display(SawyerXYZEnv):
 
         # return reward + after_reward, info
         return reward, info
-
-    def _get_after_success(self, info):
-        hand_pos = self.get_endeff_pos()
-        return info['success'] and (hand_pos[2] >= 0.29)
-
-    def _get_after_reward(self, info):
-        if not info['success']:
-            return 0
-        else:
-            self.succeed = True
-            hand_pos = self.get_endeff_pos()
-            return 2 * hand_pos[2] / 0.3
 
     @property
     def _target_site_config(self):
@@ -184,6 +173,7 @@ class SawyerCoffeeButtonEnvV2Display(SawyerXYZEnv):
     def reset_model(self):
         self._reset_hand()
         self._random_init_color()
+        self._random_table_and_floor()
 
         print('Running reset.')
         print(f'First init pos: {self.obj_init_pos}.')
