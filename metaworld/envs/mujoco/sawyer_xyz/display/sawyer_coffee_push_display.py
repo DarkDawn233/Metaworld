@@ -7,7 +7,7 @@ from metaworld.envs import reward_utils
 from metaworld.envs.asset_path_utils import full_display_path_for
 from metaworld.envs.mujoco.sawyer_xyz.sawyer_xyz_env import _assert_task_is_set
 from metaworld.envs.mujoco.sawyer_xyz.display.sawyer_base import SawyerXYZEnvDisplay
-from metaworld.envs.display_utils import RGB_COLOR_LIST, QUAT_LIST
+from metaworld.envs.display_utils import RGB_COLOR_LIST, QUAT_LIST, random_grid_pos
 
 
 class SawyerCoffeePushEnvV2Display(SawyerXYZEnvDisplay):
@@ -193,7 +193,10 @@ class SawyerCoffeePushEnvV2Display(SawyerXYZEnvDisplay):
         return pos_machine
 
     def random_mug_cup_position(self):
-        obj_init_pos = np.random.uniform((-0.36, 0.40, 0), (0.36, 0.60, 0))
+        obj_init_pos: tuple = random_grid_pos(x_range=(-0.36, 0.36),
+                                              y_range=(0.40, 0.60))
+        obj_init_pos = np.array([*obj_init_pos, 0])
+        # obj_init_pos = np.random.uniform((-0.36, 0.40, 0), (0.36, 0.60, 0))
         if obj_init_pos[1] < 0.70 and -0.2 < obj_init_pos[0] < 0.2:
             obj_init_pos = self.random_mug_cup_position()
         if self.num_resets:

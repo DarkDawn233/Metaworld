@@ -3,7 +3,7 @@ from gym.spaces import Box
 
 from metaworld.envs import reward_utils
 from metaworld.envs.asset_path_utils import full_display_path_for
-from metaworld.envs.display_utils import RGB_COLOR_LIST, QUAT_LIST
+from metaworld.envs.display_utils import RGB_COLOR_LIST, QUAT_LIST, random_grid_pos
 import random
 from metaworld.envs.mujoco.sawyer_xyz.sawyer_xyz_env import _assert_task_is_set
 
@@ -209,7 +209,10 @@ class SawyerCoffeeButtonEnvV2Display(SawyerXYZEnvDisplay):
         return self._get_obs()
 
     def random_init_coffee_machine_position(self):
-        obj_init_pos = np.random.uniform((-0.5, 0.60, 0), (0.5, 0.85, 0))
+        obj_init_pos: tuple = random_grid_pos(x_range=(-0.50, 0.50),
+                                              y_range=(0.60, 0.85))
+        obj_init_pos = np.array([*obj_init_pos, 0])
+        # obj_init_pos = np.random.uniform((-0.5, 0.60, 0), (0.5, 0.85, 0))
         if obj_init_pos[1] < 0.70 and -0.2 < obj_init_pos[0] < 0.2:
             obj_init_pos = self.random_init_coffee_machine_position()
         if self.num_resets:
