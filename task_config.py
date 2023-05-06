@@ -62,6 +62,9 @@ TASK_DICK = {
      'drawer-close-display':        {'env': ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE["drawer-close-v2-display-goal-observable"]     ,'policy': SawyerDrawerCloseV2DisplayPolicy},
      'drawer-open-display':         {'env': ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE["drawer-open-v2-display-goal-observable"]      ,'policy': SawyerDrawerOpenV2DisplayPolicy},
      'shelf-place-display':         {'env': ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE["shelf-place-v2-display-goal-observable"]      ,'policy': SawyerShelfPlaceV2DisplayPolicy},
+     'reset-display':               {'env': ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE["reset-v2-display-goal-observable"]            ,'policy': SawyerResetV2DisplayPolicy},
+     'desk-pick-display':           {'env': ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE["desk-pick-v2-display-goal-observable"]        ,'policy': SawyerDeskPickV2DisplayPolicy},
+     'desk-place-display':          {'env': ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE["desk-place-v2-display-goal-observable"]       ,'policy': SawyerDeskPlaceV2DisplayPolicy},
 
      'drawer-place-display':        {'env': ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE["drawer-place-v2-display-goal-observable"]     ,'policy': SawyerDrawerPlaceV2DisplayPolicy},
      'drawer-pick-display':         {'env': ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE["drawer-pick-v2-display-goal-observable"]      ,'policy': SawyerDrawerPickV2DisplayPolicy},
