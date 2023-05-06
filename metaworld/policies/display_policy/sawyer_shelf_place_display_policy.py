@@ -18,7 +18,7 @@ class SawyerShelfPlaceV2DisplayPolicy(Policy):
             'shelf_yz': obs[-2:],
         }
 
-    def get_action(self, obs):
+    def get_action(self, obs, *args, **kwargs):
         o_d = self._parse_obs(obs)
 
         action = Action({
