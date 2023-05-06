@@ -4,7 +4,7 @@ import numpy as np
 
 from metaworld.policies.action import Action
 from metaworld.policies.policy import Policy, assert_fully_parsed, move
-from metaworld.envs.display_utils import QUAT_LIST
+from metaworld.envs.display_utils import near_obstacle, obstacle_in_path
 
 
 class SawyerDeskPickV2DisplayPolicy(Policy):
@@ -93,8 +93,8 @@ class SawyerDeskPickV2DisplayPolicy(Policy):
         #     state = 'Moving cup to target'
         #     pos_targ = deepcopy(pos_targ)
             pos_targ[2] += (pos_curr[2] - pos_mug[2])
-        if (abs(pos_curr[0] - pos_targ[0]) > abs(pos_obj[0] - pos_targ[0])) \
-                and ((pos_curr[0] - pos_targ[0]) * (pos_obj[0] - pos_targ[0]) > 0):
+        if obstacle_in_path(pos_curr, pos_targ, pos_obj) \
+                or near_obstacle(pos_curr, pos_obj):
             state = 'Leaving obstacle'
             # pos_targ = deepcopy(pos_curr)
             # pos_targ[2] = 0.45
