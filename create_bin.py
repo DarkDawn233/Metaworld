@@ -11,6 +11,10 @@ import time
 import random
 import h5py
 
+import tensorflow as tf
+
+IMG_ENCODE_FORMAT = 'jpg'
+
 ROOT_PATH = Path(__file__).absolute().parents[0] / "data"
 BIN_PATH = Path(__file__).absolute().parents[0] / "data_bin"
 TASK_LIST = [
@@ -57,20 +61,27 @@ TASK_LIST = [
         # "reach",
         # "reach-wall",
         # "shelf-place",
-        "soccer",
+        # "soccer",
         # "stick-pull",
         # "stick-push",
         # "sweep-into",
         # "sweep",
         # "window-close",
         # "window-open",
+        # "coffee-button-display",
+        # "coffee-pull-display",
+        # "coffee-push-display",
+        "drawer-close-display",
+        "drawer-open-display",
+        "drawer-pick-display",
+        "drawer-place-display", 
         ]
-EPISODE_LIST = [i for i in range(2200)]
+EPISODE_LIST = [i for i in range(21000)]
 # REPLAY_LIST = [str(i) for i in range(1, 2)]
-CKPT_LIST = [i for i in range(22)]
+CKPT_LIST = [i for i in range(210)]
 
 THREAD_NUM = 50
-PROCESS_NUM = 5
+PROCESS_NUM = 10
 
 def check_file(*paths):
     f = True
@@ -98,7 +109,7 @@ def np2uint8(*args):
         ans.append(np.frombuffer(tmp, dtype=np.uint8))
     return ans
 
-def thread_process_data(t_id, task, id_begin, id_end, t_dict):
+def thread_process_data(t_id, task, id_begin, id_end, t_dict, img_encode_format='png'):
     act_list, rew_list, ter_list, ret_list, obs_list = [], [], [], [], []
     img1_list, img2_list, img3_list = [], [], []
     for i in range(id_begin, id_end):
@@ -138,7 +149,10 @@ def thread_process_data(t_id, task, id_begin, id_end, t_dict):
     img_all = 0
     for i in range(length):
         for img in [img1[i], img2[i], img3[i]]:
-            img_encode = cv2.imencode('.png', img)[1]
+            if img_encode_format == "jpg":
+                img_encode = cv2.imencode('.jpg', img)[1]
+            else:
+                img_encode = cv2.imencode('.png', img)[1]
             img_all += len(img_encode)
     
     data_all = img_all + (4*4 + 4 + 1 + 4 + 4*39) * length
@@ -150,11 +164,20 @@ def thread_process_data(t_id, task, id_begin, id_end, t_dict):
 
     data_begin = 0
     for i in tqdm(range(length)):
-        img1_encode = cv2.imencode('.png', img1[i])[1]
+        if img_encode_format == "jpg":
+            img1_encode = cv2.imencode('.jpg', img1[i])[1]
+        else:
+            img1_encode = cv2.imencode('.png', img1[i])[1]
         img1_encode_len = len(img1_encode)
-        img2_encode = cv2.imencode('.png', img2[i])[1]
+        if img_encode_format == "jpg":
+            img2_encode = cv2.imencode('.jpg', img2[i])[1]
+        else:
+            img2_encode = cv2.imencode('.png', img2[i])[1]
         img2_encode_len = len(img2_encode)
-        img3_encode = cv2.imencode('.png', img3[i])[1]
+        if img_encode_format == "jpg":
+            img3_encode = cv2.imencode('.jpg', img3[i])[1]
+        else:
+            img3_encode = cv2.imencode('.png', img3[i])[1]
         img3_encode_len = len(img3_encode)
 
         tmp = data_begin
@@ -186,14 +209,6 @@ def write_bin(task, ckpt):
 
     begin_episode = ckpt * (len(EPISODE_LIST) // len(CKPT_LIST))
 
-    bin_dir = BIN_PATH / task / str(ckpt)
-    if not os.path.exists(bin_dir):
-        os.makedirs(bin_dir)
-
-    data_bin_path = bin_dir / "data.bin"
-    index_bin_path = bin_dir / "index.bin"
-    clear_file(data_bin_path, index_bin_path)
-
     data_thread_dict = {}
     valid_len = len(EPISODE_LIST) // len(CKPT_LIST)
     thread_len = valid_len // THREAD_NUM
@@ -204,7 +219,7 @@ def write_bin(task, ckpt):
             thread_end = max((i+1)*thread_len, valid_len) + begin_episode
         else:
             thread_end = (i+1)*thread_len + begin_episode
-        t = threading.Thread(target=thread_process_data, args=(i, task, thread_begin, thread_end, data_thread_dict))
+        t = threading.Thread(target=thread_process_data, args=(i, task, thread_begin, thread_end, data_thread_dict, IMG_ENCODE_FORMAT))
         t.start()
         thread_list.append(t)
     for t in thread_list:
@@ -221,9 +236,21 @@ def write_bin(task, ckpt):
         data_index_list.append(data_thread_dict[i]["data_index"]+data_begin)
         data_begin[0] += data_thread_dict[i]["data_index"][-1].sum() + 4*4 + 4 + 1 + 4 + 4*39
         data_length += data_thread_dict[i]["data_length"]
+    
+    if len(data_index_list) == 0:
+        print(f"No data ckpt finish: {task} {ckpt}")
+        return
 
     data_index = np.concatenate(data_index_list, axis=0)
     data_index_byte = data_index.tobytes()
+
+    bin_dir = BIN_PATH / task / str(ckpt)
+    if not os.path.exists(bin_dir):
+        os.makedirs(bin_dir)
+
+    data_bin_path = bin_dir / "data.bin"
+    index_bin_path = bin_dir / "index.bin"
+    clear_file(data_bin_path, index_bin_path)
 
     data_f = open(data_bin_path, 'wb')
     index_f = open(index_bin_path, 'wb')
@@ -347,7 +374,105 @@ def random_test(test_num=1000, test_in_num=10):
         data_f.close()
         data_index_f.close()
                 
+def test_single_data(task, file_name):
+    act_list, rew_list, ter_list, ret_list, obs_list = [], [], [], [], []
+    img1_list, img2_list, img3_list = [], [], []
+    
+    src_path = ROOT_PATH / task / file_name
+    
+    f = h5py.File(src_path, "r")
+    act_list.append(np.array(f["action"]))
+    rew_list.append(np.array(f["reward"]))
+    ter_list.append(np.array(f["done"]))
+    ret_list.append(np.array(f["return"]))
+    obs_list.append(np.array(f["obs"])[:-1])
 
+    img1_list.append(np.array(f["img"]["corner3"])[:-1])
+    img2_list.append(np.array(f["img"]["corner"])[:-1])
+    img3_list.append(np.array(f["img"]["topview"])[:-1])
+
+    f.close()
+
+    act = np.array(np.concatenate(act_list, axis=0), dtype=np.float32)
+    rew = np.array(np.concatenate(rew_list, axis=0), dtype=np.float32)
+    ter = np.array(np.concatenate(ter_list, axis=0), dtype=np.uint8)
+    ret = np.array(np.concatenate(ret_list, axis=0), dtype=np.float32)
+    obs = np.array(np.concatenate(obs_list, axis=0), dtype=np.float32)
+    img1 = np.array(np.concatenate(img1_list, axis=0), dtype=np.uint8)
+    img2 = np.array(np.concatenate(img2_list, axis=0), dtype=np.uint8)
+    img3 = np.array(np.concatenate(img3_list, axis=0), dtype=np.uint8)
+
+    length = act.shape[0]
+
+    img_all = 0
+    for i in range(length):
+        for img in [img1[i], img2[i], img3[i]]:
+            param = [int(cv2.IMWRITE_JPEG_QUALITY), 100]
+            # img_encode = cv2.imencode('.png', img, param)[1]
+            img_encode = cv2.imencode('.jpg', img, param)[1]
+            # img_encode = np.frombuffer(tf.io.encode_jpeg(img).numpy(), dtype=np.uint8)
+            img_all += len(img_encode)
+    
+    data_all = img_all + (4*4 + 4 + 1 + 4 + 4*39) * length
+
+    data = np.zeros([data_all], dtype=np.uint8)
+    data_index = np.zeros([length, 4], dtype=np.int64)
+
+    act, rew, ter, ret, obs = np2uint8(act, rew, ter, ret, obs)
+
+    data_begin = 0
+    for i in tqdm(range(length)):
+        param = [int(cv2.IMWRITE_JPEG_QUALITY), 100]
+        # img1_encode = cv2.imencode('.png', img1[i])[1]
+        img1_encode = cv2.imencode('.jpg', img1[i], param)[1]
+        # img1_decode = cv2.imdecode(img1_encode, -1)
+        # print("same:", (img1_decode == img1[i]).all())
+        # raise ValueError("")
+        # img1_encode = np.frombuffer(tf.io.encode_jpeg(img1[i]).numpy(), dtype=np.uint8)
+        img1_encode_len = len(img1_encode)
+        # img2_encode = cv2.imencode('.png', img2[i])[1]
+        img2_encode = cv2.imencode('.jpg', img2[i], param)[1]
+        # img2_encode = np.frombuffer(tf.io.encode_jpeg(img2[i]).numpy(), dtype=np.uint8)
+        img2_encode_len = len(img2_encode)
+        # img3_encode = cv2.imencode('.png', img3[i])[1]
+        img3_encode = cv2.imencode('.jpg', img3[i], param)[1]
+        # img3_encode = np.frombuffer(tf.io.encode_jpeg(img3[i]).numpy(), dtype=np.uint8)
+        img3_encode_len = len(img3_encode)
+
+        tmp = data_begin
+        data[tmp: tmp + 4*4] = act[i * 4*4: (i+1) * 4*4]
+        tmp += 4*4
+        data[tmp: tmp + 4] = rew[i * 4: (i+1) * 4]
+        tmp += 4
+        data[tmp: tmp + 1] = ter[i * 1: (i+1) * 1]
+        tmp += 1
+        data[tmp: tmp + 4] = ret[i * 4: (i+1) * 4]
+        tmp += 4
+        data[tmp: tmp + 4*39] = obs[i * 4*39: (i+1) * 4*39]
+        tmp += 4*39
+        data[tmp: tmp + img1_encode_len] = img1_encode
+        tmp += img1_encode_len
+        data[tmp: tmp + img2_encode_len] = img2_encode
+        tmp += img2_encode_len
+        data[tmp: tmp + img3_encode_len] = img3_encode
+        tmp += img3_encode_len
+
+        data_index[i] = [data_begin, img1_encode_len, img2_encode_len, img3_encode_len]
+        data_begin += 4*4 + 4 + 1 + 4 + 4*39 + img1_encode_len + img2_encode_len + img3_encode_len
+
+    data_byte = data.tobytes()
+
+    bin_dir = BIN_PATH / task
+    if not os.path.exists(bin_dir):
+        os.makedirs(bin_dir)
+    data_bin_path = bin_dir / "data_640_480_jpg_100.bin"
+    data_f = open(data_bin_path, 'wb')
+    data_f.write(data_byte)
+    data_f.close()
+
+
+# test_single_data(task='drawer-place-display', file_name='0_640_480.hdf5')
+# test_encode_len(task='drawer-place-display', file_name='0_640_480.hdf5')
 # write_bin("push-back", 6)
-# multiprocess_write_bin(PROCESS_NUM)
+multiprocess_write_bin(PROCESS_NUM)
 # random_test(1000)
