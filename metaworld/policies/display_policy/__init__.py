@@ -8,6 +8,8 @@ from metaworld.policies.display_policy.sawyer_shelf_place_display_policy import 
 from metaworld.policies.display_policy.sawyer_drawer_place_display_policy import SawyerDrawerPlaceV2DisplayPolicy
 from metaworld.policies.display_policy.sawyer_drawer_pick_display_policy import SawyerDrawerPickV2DisplayPolicy
 
+from metaworld.policies.display_policy._sawyer_display_policy import SawyerV2DisplayPolicy
+
 __all__ = [
     'SawyerCoffeeButtonV2DisplayPolicy',
     'SawyerCoffeePullV2DisplayPolicy',
@@ -18,4 +20,6 @@ __all__ = [
 
     'SawyerDrawerPlaceV2DisplayPolicy',
     'SawyerDrawerPickV2DisplayPolicy',
+
+    'SawyerV2DisplayPolicy'
 ]

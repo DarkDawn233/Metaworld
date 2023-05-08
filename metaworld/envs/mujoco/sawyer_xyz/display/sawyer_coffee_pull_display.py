@@ -67,6 +67,8 @@ class SawyerCoffeePullEnvV2Display(SawyerXYZEnvDisplay):
 
         }
 
+        info['quat'] = self.quat
+
         if success:
             self.succeed = True
             hand_pos = self.get_endeff_pos()
@@ -122,10 +124,10 @@ class SawyerCoffeePullEnvV2Display(SawyerXYZEnvDisplay):
     #     self._target_pos = pos_mug_goal
     #     return self._get_obs()
 
-    def step(self, a):
-        obs, reward, done, info = super().step(a)
-        info['quat'] = self.quat
-        return obs, reward, done, info
+    # def step(self, a):
+    #     obs, reward, done, info = super().step(a)
+    #     info['quat'] = self.quat
+    #     return obs, reward, done, info
 
     def reset_model(self):
         self._reset_hand()

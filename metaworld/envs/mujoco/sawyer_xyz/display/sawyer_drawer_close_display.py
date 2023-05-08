@@ -12,6 +12,8 @@ from metaworld.envs.display_utils import RGB_COLOR_LIST, QUAT_LIST
 from metaworld.envs.display_utils import random_grid_pos
 
 
+
+
 class SawyerDrawerCloseEnvV2Display(SawyerXYZEnvDisplay):
     _TARGET_RADIUS = 0.01
     def __init__(self):
@@ -59,7 +61,7 @@ class SawyerDrawerCloseEnvV2Display(SawyerXYZEnvDisplay):
         _,
         target_to_obj,
         object_grasped,
-        in_place) = self.compute_reward(action, obs)
+        in_place) = self.compute_reward_drawer_close(action, obs)
 
         info = {
             'success': float(target_to_obj <= self.TARGET_RADIUS+0.005),
@@ -71,8 +73,8 @@ class SawyerDrawerCloseEnvV2Display(SawyerXYZEnvDisplay):
             'unscaled_reward': reward,
         }
 
-        info['after_success'] = self._get_after_success(info)
-        after_reward = self._get_after_reward(info)
+        info['after_success'] = self._get_after_success_drawer_close(info)
+        after_reward = self._get_after_reward_drawer_close(info)
 
         return reward + after_reward, info
 
@@ -195,7 +197,7 @@ class SawyerDrawerCloseEnvV2Display(SawyerXYZEnvDisplay):
 
         return self._get_obs()
 
-    def compute_reward(self, action, obs):
+    def compute_reward_drawer_close(self, action, obs):
         # print('drawer:', self.get_body_com('drawer'))
         # print('drawer_link:', self.get_body_com('drawer_link'))
         # print('obj_init_pos:', self.obj_init_pos)
@@ -246,11 +248,11 @@ class SawyerDrawerCloseEnvV2Display(SawyerXYZEnvDisplay):
                object_grasped,
                in_place)
     
-    def _get_after_success(self, info):
+    def _get_after_success_drawer_close(self, info):
         hand_pos = self.get_endeff_pos()
         return info['success'] and (hand_pos[2] >= 0.29)
 
-    def _get_after_reward(self, info):
+    def _get_after_reward_drawer_close(self, info):
         if not info['success']:
             return 0
         else:

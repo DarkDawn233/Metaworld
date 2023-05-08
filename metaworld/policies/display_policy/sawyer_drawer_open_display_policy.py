@@ -33,7 +33,7 @@ class SawyerDrawerOpenV2DisplayPolicy(Policy):
 
         # NOTE this policy looks different from the others because it must
         # modify its p constant part-way through the task
-        action['delta_pos'] = move(o_d['hand_pos'], to_xyz=self._desired_pos(o_d), p=10.)
+        action['delta_pos'] = move(o_d['hand_pos'], to_xyz=self._desired_pos(o_d), p=5.)
         action['grab_effort'] = -1.
 
         return action.array

@@ -59,7 +59,7 @@ class SawyerDrawerPickEnvV2Display(SawyerXYZEnvDisplay):
         _,
         target_to_obj,
         object_grasped,
-        in_place) = self.compute_reward(action, obs)
+        in_place) = self.compute_reward_drawer_pick(action, obs)
 
         info = {
             'success': float(target_to_obj <= self.TARGET_RADIUS+0.005),
@@ -72,8 +72,8 @@ class SawyerDrawerPickEnvV2Display(SawyerXYZEnvDisplay):
             'unscaled_reward': reward,
         }
 
-        info['after_success'] = self._get_after_success(info)
-        after_reward = self._get_after_reward(info)
+        info['after_success'] = self._get_after_success_drawer_pick(info)
+        after_reward = self._get_after_reward_drawer_pick(info)
 
         return reward + after_reward, info
     
@@ -229,7 +229,7 @@ class SawyerDrawerPickEnvV2Display(SawyerXYZEnvDisplay):
 
         return self._get_obs()
 
-    def _gripper_caging_reward(self, action, obj_position):
+    def _gripper_caging_reward_drawer_pick(self, action, obj_position):
         pad_success_margin = 0.05
         x_z_success_margin = 0.005
         obj_radius = 0.015
@@ -267,7 +267,7 @@ class SawyerDrawerPickEnvV2Display(SawyerXYZEnvDisplay):
 
         x_z_caging = reward_utils.tolerance(tcp_obj_norm_x_z,
                                 bounds=(0, x_z_success_margin),
-                                margin=tcp_obj_x_z_margin,
+                                margin=max(tcp_obj_x_z_margin, 0),
                                 sigmoid='long_tail',)
 
         gripper_closed = min(max(0, action[-1]), 1)
@@ -279,7 +279,7 @@ class SawyerDrawerPickEnvV2Display(SawyerXYZEnvDisplay):
         caging_and_gripping = (caging_and_gripping + caging) / 2
         return caging_and_gripping
 
-    def compute_reward(self, action, obs):
+    def compute_reward_drawer_pick(self, action, obs):
         # print('drawer:', self.get_body_com('drawer'))
         # print('drawer_link:', self.get_body_com('drawer_link'))
         # print('obj_init_pos:', self.obj_init_pos)
@@ -298,7 +298,7 @@ class SawyerDrawerPickEnvV2Display(SawyerXYZEnvDisplay):
                                     margin=in_place_margin,
                                     sigmoid='long_tail',)
 
-        object_grasped = self._gripper_caging_reward(action, obj)
+        object_grasped = self._gripper_caging_reward_drawer_pick(action, obj)
         in_place_and_object_grasped = reward_utils.hamacher_product(object_grasped,
                                                                     in_place)
         reward = in_place_and_object_grasped
@@ -317,11 +317,11 @@ class SawyerDrawerPickEnvV2Display(SawyerXYZEnvDisplay):
                object_grasped,
                in_place)
     
-    def _get_after_success(self, info):
+    def _get_after_success_drawer_pick(self, info):
         hand_pos = self.get_endeff_pos()
         return info['success'] and (hand_pos[2] >= 0.29)
 
-    def _get_after_reward(self, info):
+    def _get_after_reward_drawer_pick(self, info):
         if not info['success']:
             return 0
         else:
