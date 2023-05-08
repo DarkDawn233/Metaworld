@@ -1,5 +1,6 @@
 from metaworld.task_config import TASK_DICK
 import numpy as np
+import random
 import imageio
 from pathlib import Path
 from typing import List, Dict
@@ -9,7 +10,7 @@ CAMERA_LIST = ["corner3", "corner", "corner2", "topview"]
 
 class Demo(object):
     def __init__(self, task_name, seed=None, save_gif=False) -> None:
-        # random.seed(seed)
+        random.seed(seed)
         np.random.seed(seed)
         self.env = TASK_DICK[task_name]['env'](seed=seed)
         self.policy = TASK_DICK[task_name]['policy']()
@@ -56,7 +57,7 @@ class Demo(object):
         if self.done and self.save_gif:
             root_path = Path(__file__).parent / 'data'
             root_path.mkdir(exist_ok=True, parents=True)
-            imageio.mimsave(str(root_path / ('demo.gif')), self.img_list, fps=24)
+            imageio.mimsave(str(root_path / ('demo.gif')), self.img_list, duration=0.04)
         return self.done
     
 
@@ -72,7 +73,7 @@ if __name__ == "__main__":
         img = demo.env_step()
         # TODO 推流
         if demo.over():
-            print('demo over')
+            print(f'demo over step_num {demo.step}')
             break
 
         
