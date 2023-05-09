@@ -26,7 +26,7 @@ def random_grid_pos(x_range, y_range, forbid_list=[]):
         y = np.random.randint(int(np.round(y_range[0]*100)), int(np.round(y_range[1]*100))) / 100
         flag = True
         for (min_x, max_x), (min_y, max_y) in forbid_list:
-            if min_x < x < max_x and min_y < y < max_y:
+            if min_x <= x <= max_x and min_y <= y <= max_y:
                 flag = False
                 break
         if flag:

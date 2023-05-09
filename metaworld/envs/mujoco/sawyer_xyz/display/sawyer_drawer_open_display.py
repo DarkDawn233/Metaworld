@@ -60,7 +60,7 @@ class SawyerDrawerOpenEnvV2Display(SawyerXYZEnvDisplay):
             caging_reward,
             opening_reward,
             success
-        ) = self.compute_reward(action, obs)
+        ) = self.compute_reward_drawer_open(action, obs)
 
         info = {
             'success': float(success),
@@ -72,8 +72,8 @@ class SawyerDrawerOpenEnvV2Display(SawyerXYZEnvDisplay):
             'unscaled_reward': reward,
         }
 
-        info['after_success'] = self._get_after_success(info)
-        after_reward = self._get_after_reward(info)
+        info['after_success'] = self._get_after_success_drawer_open(info)
+        after_reward = self._get_after_reward_drawer_open(info)
 
         return reward + after_reward, info
     
@@ -213,10 +213,10 @@ class SawyerDrawerOpenEnvV2Display(SawyerXYZEnvDisplay):
 
         return self._get_obs()
 
-    def compute_reward(self, action, obs):
+    def compute_reward_drawer_open(self, action, obs):
         gripper = obs[:3]
         handle = obs[4:7]
-        print("drawer_link_len:", self.sim.data.qpos[9])
+        # print("drawer_link_len:", self.sim.data.qpos[9])
         # print('drawer:', self.get_body_com('drawer'))
         # print('drawer_link:', self.get_body_com('drawer_link'))
         # print('_target_pos:', self._target_pos)
@@ -275,11 +275,11 @@ class SawyerDrawerOpenEnvV2Display(SawyerXYZEnvDisplay):
             success
         )
     
-    def _get_after_success(self, info):
+    def _get_after_success_drawer_open(self, info):
         hand_pos = self.get_endeff_pos()
         return info['success'] and (hand_pos[2] >= 0.29)
 
-    def _get_after_reward(self, info):
+    def _get_after_reward_drawer_open(self, info):
         if not info['success']:
             return 0
         else:

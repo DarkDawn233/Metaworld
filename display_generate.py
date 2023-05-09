@@ -4,6 +4,7 @@ import random
 from PIL import Image
 import imageio
 import os
+import copy
 from pathlib import Path
 import h5py
 import threading
@@ -41,7 +42,7 @@ def show_demo(task_name, seed, demo, gif=False):
         for i, img in enumerate(img_list):
             save_jpeg(img, root_path / (str(i)+".jpeg"))
 
-def run_demo(task_name, seed=0, max_step=500, debug=False):
+def run_demo(task_name, task_list=[], seed=0, max_step=500, debug=False):
     env = TASK_DICK[task_name]['env'](seed=seed)
     policy = TASK_DICK[task_name]['policy']()
 
@@ -66,16 +67,19 @@ def run_demo(task_name, seed=0, max_step=500, debug=False):
     final_done = 0
     step = 0
     info = {}
+    now_task = None
 
-    while final_done < 1 and step < max_step:
-        a = policy.get_action(obs, info)
+    env.reset_task_list(task_list)
+    result_done = []
+
+    while len(env.task_list) > 0 and step < max_step:
+        a = policy.get_action(obs, now_task, info)
         a = np.clip(a, -1, 1)
         demo['action'].append(a)
         obs, reward, done, info = env.step(a)
+        now_task = info['task_name']
         if done:
-            ever_done = True
-        if ever_done:
-            final_done += 1
+            result_done.append(now_task)
         # done = info['success']
         demo['obs'].append(obs)
         demo['reward'].append(reward)
@@ -90,7 +94,7 @@ def run_demo(task_name, seed=0, max_step=500, debug=False):
         if debug:
             print("step:", step, "reward:", reward, env.last_reward, "a:", a)
     
-    print(task_name, seed, "done", done, step)
+    print(task_name, seed, "done", result_done, step)
     
     return demo, done
 
@@ -214,26 +218,27 @@ def stat_success(task_name, thread_num=10, total_ep=2000):
 
 def generate_data_main():
     task_name_list = [
-        "drawer-close-display",
-        "drawer-open-display",
-        # "drawer-place-display",
+        # "drawer-close-display",
+        # "drawer-open-display",
+        "drawer-place-display",
         # "drawer-pick-display",
         ]
     for task_name in task_name_list:
-        generate_data(task_name=task_name, thread_num=10, total_ep=20000)
-        stat_success(task_name=task_name, thread_num=10, total_ep=20000)
+        generate_data(task_name=task_name, thread_num=10, total_ep=21000)
+        stat_success(task_name=task_name, thread_num=10, total_ep=21000)
 
 if __name__ == "__main__":
     os.environ['CUDA_VISIBLE_DEVICES']='1'
-    generate_data_main()
-    # task_name = "drawer-open-display"
-    # for seed in range(10):
-    #     # seed = 6
-    #     random.seed(seed)
-    #     np.random.seed(seed)
-    #     demo, _ = run_demo(task_name=task_name, seed=seed, max_step=400, debug=True)
-    #     # demo = cal_return_to_go(demo)
-    #     show_demo(task_name=task_name, seed=seed, demo=demo, gif=True)
+    # generate_data_main()
+    task_name = "display"
+    task_list = ['drawer-open', 'drawer-place', 'drawer-close', 'drawer-open', 'drawer-pick']
+    for seed in range(1):
+        # seed = 6
+        random.seed(seed)
+        np.random.seed(seed)
+        demo, _ = run_demo(task_name=task_name, task_list=copy.deepcopy(task_list), seed=seed, max_step=1000, debug=True)
+        # demo = cal_return_to_go(demo)
+        show_demo(task_name=task_name, seed=seed, demo=demo, gif=True)
 
         # write_h5(task_name=task_name, seed=seed, demo=demo)
     # read_h5(task_name=task_name, seed=seed)

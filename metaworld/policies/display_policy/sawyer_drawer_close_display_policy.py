@@ -58,10 +58,10 @@ class SawyerDrawerCloseV2DisplayPolicy(Policy):
                     return np.array([pos_curr[0], pos_curr[1], pos_drwr[2] + 0.5])
                 else:
                     # move to front edge of drawer handle, but stay high in Z
-                    return pos_drwr + np.array([0., -0.075, 0.23])
+                    return pos_drwr + np.array([0., -0.08, 0.23])
             # drop down to touch drawer handle
             elif abs(pos_curr[2] - pos_drwr[2]) > 0.01:
-                return pos_drwr + np.array([0., -0.075, 0.])
+                return pos_drwr + np.array([0., -0.08, 0.])
             # push toward drawer handle's centroid
             else:
                 return pos_drwr
@@ -70,9 +70,9 @@ class SawyerDrawerCloseV2DisplayPolicy(Policy):
                 if pos_curr[2] < pos_drwr[2] + 0.23:
                     return np.array([pos_curr[0], pos_curr[1], pos_drwr[2] + 0.5])
                 else:
-                    return pos_drwr + np.array([0., +0.075, 0.23])
+                    return pos_drwr + np.array([0., +0.08, 0.23])
             elif abs(pos_curr[2] - pos_drwr[2]) > 0.01:
-                return pos_drwr + np.array([0., +0.075, 0.])
+                return pos_drwr + np.array([0., +0.08, 0.])
             else:
                 return pos_drwr
         elif quat_index == 1:
@@ -80,9 +80,9 @@ class SawyerDrawerCloseV2DisplayPolicy(Policy):
                 if pos_curr[2] < pos_drwr[2] + 0.23:
                     return np.array([pos_curr[0], pos_curr[1], pos_drwr[2] + 0.5])
                 else:
-                    return pos_drwr + np.array([+0.075, 0., 0.23])
+                    return pos_drwr + np.array([+0.08, 0., 0.23])
             elif abs(pos_curr[2] - pos_drwr[2]) > 0.01:
-                return pos_drwr + np.array([+0.075, 0., 0.])
+                return pos_drwr + np.array([+0.08, 0., 0.])
             else:
                 return pos_drwr
         else:
@@ -90,8 +90,8 @@ class SawyerDrawerCloseV2DisplayPolicy(Policy):
                 if pos_curr[2] < pos_drwr[2] + 0.23:
                     return np.array([pos_curr[0], pos_curr[1], pos_drwr[2] + 0.5])
                 else:
-                    return pos_drwr + np.array([-0.075, 0., 0.23])
+                    return pos_drwr + np.array([-0.08, 0., 0.23])
             elif abs(pos_curr[2] - pos_drwr[2]) > 0.01:
-                return pos_drwr + np.array([-0.075, 0., 0.])
+                return pos_drwr + np.array([-0.08, 0., 0.])
             else:
                 return pos_drwr

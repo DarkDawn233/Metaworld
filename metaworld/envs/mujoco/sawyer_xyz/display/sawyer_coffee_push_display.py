@@ -68,6 +68,7 @@ class SawyerCoffeePushEnvV2Display(SawyerXYZEnvDisplay):
             'unscaled_reward': reward,
 
         }
+        info['quat'] = self.quat
 
         if success:
             self.succeed = True
@@ -80,10 +81,10 @@ class SawyerCoffeePushEnvV2Display(SawyerXYZEnvDisplay):
 
         return reward, info
 
-    def step(self, a):
-        obs, reward, done, info = super().step(a)
-        info['quat'] = self.quat
-        return obs, reward, done, info
+    # def step(self, a):
+    #     obs, reward, done, info = super().step(a)
+    #     info['quat'] = self.quat
+    #     return obs, reward, done, info
 
     @property
     def _target_site_config(self):

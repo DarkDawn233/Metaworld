@@ -62,7 +62,7 @@ class SawyerCoffeeButtonEnvV2Display(SawyerXYZEnvDisplay):
             near_button,
             button_pressed,
             success
-        ) = self.compute_reward(action, obs)
+        ) = self.compute_reward_coffee_button(action, obs)
 
         info = {
             'success': success,
@@ -256,7 +256,7 @@ class SawyerCoffeeButtonEnvV2Display(SawyerXYZEnvDisplay):
         for model_name in ['coffee_machine_body', 'mug', 'handle']:
             set_model_rgba(model_name)
 
-    def compute_reward(self, action, obs):
+    def compute_reward_coffee_button(self, action, obs):
         del action
         obj = obs[4:7]
         tcp = self.tcp_center

@@ -33,7 +33,7 @@ class SawyerDrawerOpenV2DisplayPolicy(Policy):
 
         # NOTE this policy looks different from the others because it must
         # modify its p constant part-way through the task
-        action['delta_pos'] = move(o_d['hand_pos'], to_xyz=self._desired_pos(o_d), p=10.)
+        action['delta_pos'] = move(o_d['hand_pos'], to_xyz=self._desired_pos(o_d), p=5.)
         action['grab_effort'] = -1.
 
         return action.array
@@ -70,7 +70,10 @@ class SawyerDrawerOpenV2DisplayPolicy(Policy):
             else:
                 return pos_drwr + np.array([0., +0.08, 0.])
         elif quat_index == 1:
-            target_pos_drwr = pos_drwr + np.array([-0.04, -0.03, 0])
+            if pos_drwr[1] < 0.5:
+                target_pos_drwr = pos_drwr + np.array([-0.04, +0.03, 0])
+            else:
+                target_pos_drwr = pos_drwr + np.array([-0.04, -0.03, 0])
             if np.linalg.norm(pos_curr[:2] - target_pos_drwr[:2]) > 0.03:
                 return target_pos_drwr + np.array([0., 0., 0.3])
             elif abs(pos_curr[2] - pos_drwr[2]) > 0.04:
@@ -78,7 +81,10 @@ class SawyerDrawerOpenV2DisplayPolicy(Policy):
             else:
                 return target_pos_drwr + np.array([+0.08, 0., 0.])
         else:
-            target_pos_drwr = pos_drwr + np.array([+0.04, -0.03, 0])
+            if pos_drwr[1] < 0.5:
+                target_pos_drwr = pos_drwr + np.array([+0.04, +0.03, 0])
+            else:
+                target_pos_drwr = pos_drwr + np.array([+0.04, -0.03, 0])
             if np.linalg.norm(pos_curr[:2] - target_pos_drwr[:2]) > 0.03:
                 return target_pos_drwr + np.array([0., 0., 0.3])
             elif abs(pos_curr[2] - pos_drwr[2]) > 0.04:
