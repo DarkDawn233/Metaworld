@@ -76,13 +76,13 @@ class SawyerShelfPlaceEnvV2Display(SawyerXYZEnvDisplay):
 
     def _get_quat_objects(self):
         return Rotation.from_matrix(
-            self.data.get_geom_xmat('objGeom')
+            self.data.get_geom_xmat('mug')
         ).as_quat()
 
     def adjust_initObjPos(self, orig_init_pos):
         # This is to account for meshes for the geom and object are not aligned
         # If this is not done, the object could be initialized in an extreme position
-        diff = self.get_body_com('obj')[:2] - self.data.get_geom_xpos('objGeom')[:2]
+        diff = self.get_body_com('obj')[:2] - self.data.get_geom_xpos('mug')[:2]
         adjustedPos = orig_init_pos[:2] + diff
 
         #The convention we follow is that body_com[2] is always 0, and geom_pos[2] is the object height
@@ -91,7 +91,7 @@ class SawyerShelfPlaceEnvV2Display(SawyerXYZEnvDisplay):
     def reset_model(self):
         self._reset_hand()
         self.sim.model.body_pos[self.model.body_name2id('shelf')] = self.goal.copy() - np.array([0, 0, 0.3])
-        self._target_pos = self.sim.model.site_pos[self.model.site_name2id('goal')] + self.sim.model.body_pos[self.model.body_name2id('shelf')]
+        self._target_pos = np.array([0., 0., 0.3]) + self.sim.model.body_pos[self.model.body_name2id('shelf')]
         self.obj_init_pos = self.adjust_initObjPos(self.init_config['obj_init_pos'])
         self.obj_init_angle = self.init_config['obj_init_angle']
 
@@ -102,7 +102,7 @@ class SawyerShelfPlaceEnvV2Display(SawyerXYZEnvDisplay):
             base_shelf_pos = goal_pos - np.array([0, 0, 0, 0, 0, 0.3])
             self.obj_init_pos = np.concatenate((base_shelf_pos[:2], [self.obj_init_pos[-1]]))
             self.sim.model.body_pos[self.model.body_name2id('shelf')] = base_shelf_pos[-3:]
-            self._target_pos = self.sim.model.site_pos[self.model.site_name2id('goal')] + self.sim.model.body_pos[self.model.body_name2id('shelf')]
+            self._target_pos = np.array([0., 0., 0.3]) + self.sim.model.body_pos[self.model.body_name2id('shelf')]
 
         self._set_obj_xyz(self.obj_init_pos)
         self.num_resets += 1
