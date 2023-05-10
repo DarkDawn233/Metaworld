@@ -65,6 +65,8 @@ TASK_DICK = {
 
      'drawer-place-display':        {'env': ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE["drawer-place-v2-display-goal-observable"]     ,'policy': SawyerDrawerPlaceV2DisplayPolicy},
      'drawer-pick-display':         {'env': ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE["drawer-pick-v2-display-goal-observable"]      ,'policy': SawyerDrawerPickV2DisplayPolicy},
+
+     'display':                     {'env': ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE["v2-display-goal-observable"]                  ,'policy': SawyerV2DisplayPolicy},
      
 }
 
