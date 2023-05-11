@@ -72,6 +72,7 @@ class SawyerCoffeeButtonEnvV2Display(SawyerXYZEnvDisplay):
             'in_place_reward': button_pressed,
             'obj_to_target': obj_to_target,
             'unscaled_reward': reward,
+            'target_pos': self._target_pos,
         }
 
         # info['after_success'] = self._get_after_success(info)

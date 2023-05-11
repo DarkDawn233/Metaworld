@@ -20,7 +20,9 @@ QUAT_LIST = [
 ]
 
 
-def random_grid_pos(x_range, y_range, forbid_list=[]):
+def random_grid_pos(x_range, y_range, forbid_list=None):
+    if forbid_list is None:
+        forbid_list = []
     while True:
         x = np.random.randint(int(np.round(x_range[0]*100)), int(np.round(x_range[1]*100))) / 100
         y = np.random.randint(int(np.round(y_range[0]*100)), int(np.round(y_range[1]*100))) / 100

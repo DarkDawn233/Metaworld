@@ -51,7 +51,13 @@ class SawyerCoffeePullEnvV2Display(SawyerXYZEnvDisplay):
 
     @_assert_task_is_set
     def evaluate_state(self, obs, action):
-        reward, tcp_to_obj, tcp_open, obj_to_target, grasp_reward, in_place = self.compute_reward(action, obs)
+        (
+            reward,
+            tcp_to_obj,
+            tcp_open,
+            obj_to_target,
+            grasp_reward,
+            in_place) = self._compute_reward_coffee_pull(action, obs)
         success = float(obj_to_target <= 0.01)
         near_object = float(tcp_to_obj <= 0.03)
         grasp_success = float(self.touching_object and (tcp_open > 0))
@@ -67,7 +73,8 @@ class SawyerCoffeePullEnvV2Display(SawyerXYZEnvDisplay):
 
         }
 
-        info['quat'] = self.quat
+        # info['quat'] = self.quat
+        info['quat'] = self._get_quat_objects()
 
         if success:
             self.succeed = True
@@ -80,6 +87,13 @@ class SawyerCoffeePullEnvV2Display(SawyerXYZEnvDisplay):
 
         return reward, info
 
+    # @property
+    # def succeed(self) -> bool:
+    #     if hasattr(self, '_succeed'):
+    #         return self._succeed
+    #     self._succeed = False
+    #     return self.succeed
+
     @property
     def _target_site_config(self):
         return [('mug_goal', self._target_pos)]
@@ -87,10 +101,16 @@ class SawyerCoffeePullEnvV2Display(SawyerXYZEnvDisplay):
     def _get_pos_objects(self):
         return self.get_body_com('obj')
 
+    # def _get_quat_objects(self):
+    #     return Rotation.from_matrix(
+    #         self.data.get_geom_xmat('mug')
+    #     ).as_quat()
+
     def _get_quat_objects(self):
-        return Rotation.from_matrix(
-            self.data.get_geom_xmat('mug')
-        ).as_quat()
+        if hasattr(self, 'quat'):
+            return self.quat
+        else:
+            return np.array(QUAT_LIST[0])
 
     def _set_obj_xyz(self, pos):
         qpos = self.data.qpos.flatten()
@@ -178,11 +198,11 @@ class SawyerCoffeePullEnvV2Display(SawyerXYZEnvDisplay):
         #     self.sim.model.body_name2id('mug')] = quat
         self.quat = quat
         if all(quat == QUAT_LIST[0]):
-            pos_machine = self.obj_init_pos + np.array([.0, .22, .0])
+            pos_machine = self.obj_init_pos + np.array([.0, .28, .0])
         elif all(quat == QUAT_LIST[1]):
-            pos_machine = self.obj_init_pos + np.array([-.22, .0, .0])
+            pos_machine = self.obj_init_pos + np.array([-.28, .0, .0])
         elif all(quat == QUAT_LIST[2]):
-            pos_machine = self.obj_init_pos + np.array([.22, .0, .0])
+            pos_machine = self.obj_init_pos + np.array([.28, .0, .0])
         self.sim.model.body_pos[self.model.body_name2id(
             'coffee_machine'
         )] = pos_machine
@@ -193,7 +213,7 @@ class SawyerCoffeePullEnvV2Display(SawyerXYZEnvDisplay):
         return pos_machine
 
     def random_mug_cup_position(self):
-        obj_init_pos: tuple = random_grid_pos(x_range=(-0.36, 0.36),
+        obj_init_pos: tuple = random_grid_pos(x_range=(-0.40, 0.36),
                                               y_range=(0.40, 0.60))
         obj_init_pos = np.array([*obj_init_pos, 0])
         # obj_init_pos = np.random.uniform((-0.36, 0.40, 0), (0.36, 0.60, 0))
@@ -222,7 +242,7 @@ class SawyerCoffeePullEnvV2Display(SawyerXYZEnvDisplay):
         for model_name in ['coffee_machine_body', 'mug', 'handle']:
             set_model_rgba(model_name)
 
-    def compute_reward(self, action, obs):
+    def _compute_reward_coffee_pull(self, action, obs):
         obj = obs[4:7]  # mug pos
         target = self._target_pos.copy()
 

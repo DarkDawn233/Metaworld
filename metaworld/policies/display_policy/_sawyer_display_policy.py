@@ -10,6 +10,9 @@ from metaworld.policies.display_policy.sawyer_coffee_push_display_policy import 
 from metaworld.policies.display_policy.sawyer_drawer_close_display_policy import SawyerDrawerCloseV2DisplayPolicy
 from metaworld.policies.display_policy.sawyer_drawer_open_display_policy import SawyerDrawerOpenV2DisplayPolicy
 from metaworld.policies.display_policy.sawyer_shelf_place_display_policy import SawyerShelfPlaceV2DisplayPolicy
+from metaworld.policies.display_policy.sawyer_desk_pick_display_policy import SawyerDeskPickV2DisplayPolicy
+from metaworld.policies.display_policy.sawyer_desk_place_display_policy import SawyerDeskPlaceV2DisplayPolicy
+from metaworld.policies.display_policy.sawyer_reset_display_policy import SawyerResetV2DisplayPolicy
 
 from metaworld.policies.display_policy.sawyer_drawer_place_display_policy import SawyerDrawerPlaceV2DisplayPolicy
 from metaworld.policies.display_policy.sawyer_drawer_pick_display_policy import SawyerDrawerPickV2DisplayPolicy
@@ -48,7 +51,14 @@ class SawyerV2DisplayPolicy(Policy):
                 self.policy = SawyerDrawerPickV2DisplayPolicy()
             elif now_task == 'drawer-place':
                 self.policy = SawyerDrawerPlaceV2DisplayPolicy()
+            elif now_task == 'desk-pick':
+                self.policy = SawyerDeskPickV2DisplayPolicy()
+            elif now_task == 'desk-place':
+                self.policy = SawyerDeskPlaceV2DisplayPolicy()
+            elif now_task == 'reset':
+                self.policy = SawyerResetV2DisplayPolicy()
             else:
+                print('Not policy set.')
                 self.policy = None
         if self.policy is None:
             return np.zeros(4)

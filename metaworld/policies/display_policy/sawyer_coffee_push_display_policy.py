@@ -40,7 +40,12 @@ class SawyerCoffeePushV2DisplayPolicy(Policy):
                 print('Halting after success.')
                 action['delta_pos'] *= 0
                 self.success_halt_counts += 1
-
+        if not hasattr(self, 'near_cup_halt_cnts'):
+            self.near_cup_halt_cnts = 0
+        if (action['grab_effort'] > 0) and (self.near_cup_halt_cnts < 20):
+            action['delta_pos'] *= 0
+            self.near_cup_halt_cnts += 1
+            print(f'Near cup halt counts: {self.near_cup_halt_cnts}')
         return action.array
 
     # @staticmethod
@@ -65,7 +70,7 @@ class SawyerCoffeePushV2DisplayPolicy(Policy):
         quat = info.get('quat', QUAT_LIST[0])
         quat = np.array(quat)
         pos_curr = o_d['hand_pos']
-        pos_mug = o_d['mug_pos'] + np.array([.01, .0, .05])
+        pos_mug = o_d['mug_pos'] + np.array([.00, .0, .05])
         pos_goal = o_d['goal_xy']
 
         success = info.get('success', False)
@@ -75,32 +80,34 @@ class SawyerCoffeePushV2DisplayPolicy(Policy):
                                    pos_goal[1]-pos_mug[1]+pos_curr[1],
                                    .4])
             if all(quat == QUAT_LIST[0]):
-                pos_target += np.array([0.2, 0.0, 0.0])
+                pos_target += np.array([0.0, 0.0, 0.0])
             elif all(quat == QUAT_LIST[1]):
-                pos_target += np.array([0.2, 0.0, 0.0])
+                pos_target += np.array([0.0, 0.0, 0.0])
             elif all(quat == QUAT_LIST[2]):
-                pos_target += np.array([-0.2, 0.0, 0.0])
-        elif np.linalg.norm(pos_curr[:2] - pos_mug[:2]) > 0.03:
+                pos_target += np.array([-0.0, 0.0, 0.0])
+        elif np.linalg.norm(pos_curr[:2] - pos_mug[:2]) > 0.02:
             state = 'Approaching mug cup.'
-            pos_target = pos_mug + np.array([.0, .0, .15])
-        elif abs(pos_curr[2] - pos_mug[2]) > 0.02:
+            pos_target = pos_mug + np.array([.0, .0, .2])
+        elif abs(pos_curr[2] - pos_mug[2]) > 0.03:
             state = 'Picking up mug cup.'
             pos_target = pos_mug
         elif np.linalg.norm(pos_curr[:2] - pos_goal) > 0.1:
-            state = 'Moving mug cup on air.'
-            if pos_curr[2] < 0.09:
+            if pos_curr[2] < 0.25:
+                state = '>>>> Moving mug cup on air 1.'
                 pos_target = pos_mug
-                pos_target[2] = 0.1
+                pos_target[2] = 0.3
             else:
+                state = '>>>> Moving mug cup on air 2.'
                 pos_target = np.array([pos_goal[0]-pos_mug[0]+pos_curr[0],
                                        pos_goal[1]-pos_mug[1]+pos_curr[1],
-                                       .1])
+                                       .3])
+                offset = 0.08
                 if all(quat == QUAT_LIST[0]):
-                    pos_target = pos_target + np.array([.0, -.0, .0])
+                    pos_target = pos_target + np.array([.0, -offset, .0])
                 if all(quat == QUAT_LIST[1]):
-                    pos_target = pos_target + np.array([.00, .0, .0])
+                    pos_target = pos_target + np.array([offset, .0, .0])
                 if all(quat == QUAT_LIST[2]):
-                    pos_target = pos_target + np.array([-.00, .0, .0])
+                    pos_target = pos_target + np.array([-offset, .0, .0])
         elif np.linalg.norm(pos_curr[:2] - pos_goal) > 0.02:
             state = 'Approaching target position.'
             pos_target = np.array([pos_goal[0]-pos_mug[0]+pos_curr[0],
@@ -112,6 +119,7 @@ class SawyerCoffeePushV2DisplayPolicy(Policy):
                                    pos_goal[1]-pos_mug[1]+pos_curr[1],
                                    .00])
         print(f'State: {state}')
+        print(f'Goal xy: {pos_goal}')
         print(f'Current position: {pos_curr}.')
         print(f' Target position: {pos_target}.')
         return pos_target
@@ -122,7 +130,7 @@ class SawyerCoffeePushV2DisplayPolicy(Policy):
         pos_mug = o_d['mug_pos'] + np.array([.01, .0, .05])
 
         if np.linalg.norm(pos_curr[:2] - pos_mug[:2]) > 0.02 or \
-                abs(pos_curr[2] - pos_mug[2]) > 0.03:
+                abs(pos_curr[2] - pos_mug[2]) > 0.04:
             return -1.
         else:
             return .5

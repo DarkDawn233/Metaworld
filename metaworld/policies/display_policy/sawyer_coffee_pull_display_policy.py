@@ -31,8 +31,23 @@ class SawyerCoffeePullV2DisplayPolicy(Policy):
                                    p=10.)
         action['grab_effort'] = self._grab_effort(o_d)
 
+        # if info.get('success', False):
+        #     action['grab_effort'] = -1
+
         if info.get('success', False):
             action['grab_effort'] = -1
+            if not hasattr(self, 'success_halt_counts'):
+                self.success_halt_counts = 0
+            if self.success_halt_counts < 3:
+                print('Halting after success.')
+                action['delta_pos'] *= 0
+                self.success_halt_counts += 1
+        if not hasattr(self, 'near_cup_halt_cnts'):
+            self.near_cup_halt_cnts = 0
+        if (action['grab_effort'] > 0) and (self.near_cup_halt_cnts < 20):
+            action['delta_pos'] *= 0
+            self.near_cup_halt_cnts += 1
+            print(f'Near cup halt counts: {self.near_cup_halt_cnts}')
         return action.array
 
     @staticmethod
@@ -42,7 +57,7 @@ class SawyerCoffeePullV2DisplayPolicy(Policy):
         quat = info.get('quat', QUAT_LIST[0])
         quat = np.array(quat)
         pos_curr = o_d['hand_pos']
-        pos_mug = o_d['mug_pos'] + np.array([-.005, .0, .05])
+        pos_mug = o_d['mug_pos'] + np.array([-.000, .0, .05])
 
         success = info.get('success', False)
         if success:
@@ -60,15 +75,16 @@ class SawyerCoffeePullV2DisplayPolicy(Policy):
         elif abs(pos_curr[2] - pos_mug[2]) > 0.02:
             state = 'Pickup mug cup.'
             pos_target = pos_mug
-        elif np.linalg.norm(pos_curr[:2] - o_d['target_pos'][:2]) > 0.02:
+        elif np.linalg.norm(pos_curr[:2] - o_d['target_pos'][:2]) > 0.05:
             state = 'Moving mug cup on air.'
-            pos_target = o_d['target_pos'] + np.array([.0, .0, .10])
+            pos_target = o_d['target_pos'] + np.array([.0, .0, .30])
         else:
             state = 'Moving mug cup to target position.'
             pos_target = o_d['target_pos']
         print(f'State: {state}')
         print(f'Current position: {pos_curr}.')
         print(f' Target position: {pos_target}.')
+        print(f'Mug cup position: {pos_mug}.')
         return pos_target
 
     @staticmethod
@@ -76,8 +92,8 @@ class SawyerCoffeePullV2DisplayPolicy(Policy):
         pos_curr = o_d['hand_pos']
         pos_mug = o_d['mug_pos'] + np.array([.01, .0, .05])
 
-        if np.linalg.norm(pos_curr[:2] - pos_mug[:2]) > 0.06 or \
-            abs(pos_curr[2] - pos_mug[2]) > 0.1:
+        if np.linalg.norm(pos_curr[:2] - pos_mug[:2]) > 0.05 or \
+            abs(pos_curr[2] - pos_mug[2]) > 0.02:
             return -1.
         else:
             return .7

@@ -62,7 +62,7 @@ class SawyerResetEnvV2Display(SawyerXYZEnvDisplay):
             near_target,
             # button_pressed,
             success
-        ) = self.compute_reward(action, obs)
+        ) = self.compute_reward_reset(action, obs)
 
         info = {
             'success': success,
@@ -193,7 +193,7 @@ class SawyerResetEnvV2Display(SawyerXYZEnvDisplay):
         self._random_init_color()
         self._random_table_and_floor()
         self.reset_objects()
-        self._target_pos = np.array([0.0, 0.6, 0.3])
+        self._target_pos = np.array([0.0, 0.6, 0.4])
         self.num_resets += 1
         return self._get_obs()
 
@@ -273,7 +273,7 @@ class SawyerResetEnvV2Display(SawyerXYZEnvDisplay):
         for model_name in ['coffee_machine_body', 'mug', 'handle']:
             set_model_rgba(model_name)
 
-    def compute_reward(self, action, obs):
+    def compute_reward_reset(self, action, obs):
         del action
         obj = obs[:3]
         tcp = self.tcp_center

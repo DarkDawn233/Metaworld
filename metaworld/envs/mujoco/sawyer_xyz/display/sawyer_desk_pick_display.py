@@ -36,7 +36,7 @@ class SawyerDeskPickEnvV2Display(SawyerXYZEnvDisplay):
         self.obj_init_pos = self.init_config['obj_init_pos']
         self.obj_init_angle = self.init_config['obj_init_angle']
         self.hand_init_pos = self.init_config['hand_init_pos']
-        self.coffee_machine_pos = np.array([0.0, 0.6, 0.0])
+        self.coffee_machine_init_pos = np.array([0.0, 0.6, 0.0])
 
         self._random_reset_space = Box(
             np.hstack((obj_low, goal_low)),
@@ -53,7 +53,7 @@ class SawyerDeskPickEnvV2Display(SawyerXYZEnvDisplay):
 
     @_assert_task_is_set
     def evaluate_state(self, obs, action):
-        reward, tcp_to_obj, tcp_open, obj_to_target, grasp_reward, in_place = self.compute_reward(
+        reward, tcp_to_obj, tcp_open, obj_to_target, grasp_reward, in_place = self.compute_reward_desk_pick(
             action, obs)
         success = float(obj_to_target <= 0.02)
         near_object = float(tcp_to_obj <= 0.03)
@@ -69,8 +69,9 @@ class SawyerDeskPickEnvV2Display(SawyerXYZEnvDisplay):
             'unscaled_reward': reward,
             # 'obj_pos': self.sim.model.body_pos[
             #     self.model.body_name2id('coffee_machine')],
-            'obj_pos': self.coffee_machine_pos,
+            'obj_pos': self.coffee_machine_init_pos,
         }
+        info['quat'] = self._get_quat_objects()
         print(f'-- Object position: {info["obj_pos"]}')
 
         if success:
@@ -84,10 +85,10 @@ class SawyerDeskPickEnvV2Display(SawyerXYZEnvDisplay):
 
         return reward, info
 
-    def step(self, a):
-        obs, reward, done, info = super().step(a)
-        info['quat'] = self.quat
-        return obs, reward, done, info
+    # def step(self, a):
+    #     obs, reward, done, info = super().step(a)
+    #     info['quat'] = self.quat
+    #     return obs, reward, done, info
 
     @property
     def _target_site_config(self):
@@ -214,7 +215,7 @@ class SawyerDeskPickEnvV2Display(SawyerXYZEnvDisplay):
 
     def random_init_coffee_machine_position_and_quat(self, index=None):
         if self.num_resets:
-            return self.coffee_machine_pos
+            return self.coffee_machine_init_pos
         xrange = (-0.5, 0.5)
         yrange = (0.60, 0.8)
         radius = 0.25
@@ -262,7 +263,7 @@ class SawyerDeskPickEnvV2Display(SawyerXYZEnvDisplay):
         #       f'coffee machine position: {pos_machine} '
         #       f'quat index: {index} '
         #       f'coffee machine rotation: {quat}.\n\n')
-        self.coffee_machine_pos = pos_machine
+        self.coffee_machine_init_pos = pos_machine
         return pos_machine
 
     def random_mug_cup_position(self):
@@ -295,7 +296,7 @@ class SawyerDeskPickEnvV2Display(SawyerXYZEnvDisplay):
         for model_name in ['coffee_machine_body', 'mug', 'handle']:
             set_model_rgba(model_name)
 
-    def compute_reward(self, action, obs):
+    def compute_reward_desk_pick(self, action, obs):
         obj = obs[4:7]
         target = self._target_pos.copy()
 
