@@ -9,7 +9,7 @@ from metaworld.envs.mujoco.sawyer_xyz.sawyer_xyz_env import _assert_task_is_set
 
 from metaworld.envs.mujoco.sawyer_xyz.display.sawyer_base import SawyerXYZEnvDisplay
 
-class SawyerCoffeeButtonEnvV2Display(SawyerXYZEnvDisplay):
+class SawyerResetEnvV2Display(SawyerXYZEnvDisplay):
 
     def __init__(self):
 
@@ -59,33 +59,35 @@ class SawyerCoffeeButtonEnvV2Display(SawyerXYZEnvDisplay):
             tcp_to_obj,
             tcp_open,
             obj_to_target,
-            near_button,
-            button_pressed,
+            near_target,
+            # button_pressed,
             success
-        ) = self.compute_reward_coffee_button(action, obs)
+        ) = self.compute_reward_reset(action, obs)
 
         info = {
             'success': success,
-            'near_object': float(tcp_to_obj <= 0.05),
+            'near_target': float(tcp_to_obj <= 0.05),
             'grasp_success': float(tcp_open > 0),
-            'grasp_reward': near_button,
-            'in_place_reward': button_pressed,
+            'grasp_reward': near_target,
+            # 'in_place_reward': button_pressed,
             'obj_to_target': obj_to_target,
             'unscaled_reward': reward,
-            'target_pos': self._target_pos,
+            'obj_pos': self.sim.model.body_pos[
+                self.model.body_name2id('coffee_machine')],
         }
+        print(f'Object position: {info["obj_pos"]}')
 
         # info['after_success'] = self._get_after_success(info)
-        if info['success']:
-            self.succeed = True
-            self._target_pos[2] = 0.37
-            hand_pos = self.get_endeff_pos()
-            info['after_success'] = info['success'] and (hand_pos[2] >= 0.39)
-        if self.succeed:
-            info['success'] = True
-            reward = 10
-            hand_pos = self.get_endeff_pos()
-            info['after_success'] = info['success'] and (hand_pos[2] >= 0.39)
+        # if info['success']:
+        #     self.succeed = True
+        #     self._target_pos[2] = 0.37
+        #     hand_pos = self.get_endeff_pos()
+        #     info['after_success'] = info['success'] and (hand_pos[2] >= 0.39)
+        # if self.succeed:
+        #     info['success'] = True
+        #     reward = 10
+        #     hand_pos = self.get_endeff_pos()
+        #     info['after_success'] = info['success'] and (hand_pos[2] >= 0.39)
         # after_reward = self._get_after_reward(info)
 
         # return reward + after_reward, info
@@ -93,7 +95,7 @@ class SawyerCoffeeButtonEnvV2Display(SawyerXYZEnvDisplay):
 
     @property
     def _target_site_config(self):
-        return [('coffee_goal', self._target_pos)]
+        return [('goal', self._target_pos)]
 
     def _get_id_main_object(self):
         return None
@@ -171,47 +173,61 @@ class SawyerCoffeeButtonEnvV2Display(SawyerXYZEnvDisplay):
 
     #     return self._get_obs()
 
+    def _reset_hand(self, steps=50):
+        # Overwrite `_reset_hand` method. Initial hand pos is [0.0, 0.4, 0.2].
+        lower_bound = (-0.5, 0.40, 0.05)
+        upper_bound = ( 0.5, 0.80, 0.45)
+        self.hand_init_pos = np.random.uniform(lower_bound, upper_bound)
+        # self.hand_init_pos = upper_bound
+        mocap_quat = np.array([1, 0, 1, 0])
+        for _ in range(steps):
+            self.data.set_mocap_pos('mocap', self.hand_init_pos)
+            self.data.set_mocap_quat('mocap', mocap_quat)
+            self.do_simulation([-1, 1], self.frame_skip)
+        self.init_tcp = self.tcp_center
+        print(f'Hand position randomly set as {self.hand_init_pos}.')
+
     def reset_model(self):
+        print('Running reset.')
         self._reset_hand()
         self._random_init_color()
         self._random_table_and_floor()
+        self.reset_objects()
+        self._target_pos = np.array([0.0, 0.6, 0.4])
+        self.num_resets += 1
+        return self._get_obs()
 
-        print('Running reset.')
-        print(f'First init pos: {self.obj_init_pos}.')
+    def reset_objects(self):
+        # self.random_init = False
         if self.random_init:
-            # obj_init_pos = self.obj_init_pos
-            # obj_init_pos = np.array([0.5, 0.85, 0.0])
             self.obj_init_pos = self.random_init_coffee_machine_position()
         else:
-            self.obj_init_pos = self.init_config['obj_init_pos']
-        print(f'Second init pos: {self.obj_init_pos}.')
+            # self.obj_init_pos = self.init_config['obj_init_pos']
+            self.obj_init_pos = np.array([0., 0.75, 0.])
         self.sim.model.body_pos[self.model.body_name2id(
-            'coffee_machine'
-        )] = self.obj_init_pos
+            'coffee_machine')] = self.obj_init_pos
         quat = self._random_init_quat()
 
         if all(quat == QUAT_LIST[0]):
             pos_mug = self.obj_init_pos + np.array([.0, -.22, .0])
-            pos_button = self.obj_init_pos + np.array([.0, -.22, .3])
-            self._target_pos = pos_button + np.array([.0, self.max_dist, .0])
         elif all(quat == QUAT_LIST[1]):
             pos_mug = self.obj_init_pos + np.array([.22, .0, .0])
-            pos_button = self.obj_init_pos + np.array([.22, .0, .3])
-            self._target_pos = pos_button + np.array([-self.max_dist, .0, .0])
         elif all(quat == QUAT_LIST[2]):
             pos_mug = self.obj_init_pos + np.array([-.22, .0, .0])
-            pos_button = self.obj_init_pos + np.array([-.22, .0, .3])
-            self._target_pos = pos_button + np.array([self.max_dist, .0, .0])
-        self._set_obj_xyz(pos_mug)
-
-        # pos_button = self.obj_init_pos + np.array([.0, -.22, .3])
-        # self._target_pos = pos_button + np.array([.0, self.max_dist, .0])
-        self.num_resets += 1
-        return self._get_obs()
+        # self._set_obj_xyz(pos_mug)
+        print(f'Coffee machine position: {self.obj_init_pos}.')
+        print(f'Mug cup position: {pos_mug}.')
 
     def random_init_coffee_machine_position(self):
+        forbidden_region = (
+            (
+                (self.hand_init_pos[0]-0.15, self.hand_init_pos[0]+0.15),
+                (self.hand_init_pos[1]-0.15, self.hand_init_pos[1]+0.15),
+            ),
+        )
         obj_init_pos: tuple = random_grid_pos(x_range=(-0.50, 0.50),
-                                              y_range=(0.60, 0.85))
+                                              y_range=(0.60, 0.85),
+                                              forbid_list=forbidden_region)
         obj_init_pos = np.array([*obj_init_pos, 0])
         # obj_init_pos = np.random.uniform((-0.5, 0.60, 0), (0.5, 0.85, 0))
         if obj_init_pos[1] < 0.70 and -0.2 < obj_init_pos[0] < 0.2:
@@ -257,41 +273,34 @@ class SawyerCoffeeButtonEnvV2Display(SawyerXYZEnvDisplay):
         for model_name in ['coffee_machine_body', 'mug', 'handle']:
             set_model_rgba(model_name)
 
-    def compute_reward_coffee_button(self, action, obs):
+    def compute_reward_reset(self, action, obs):
         del action
-        obj = obs[4:7]
+        obj = obs[:3]
         tcp = self.tcp_center
 
         tcp_to_obj = np.linalg.norm(obj - tcp)
         tcp_to_obj_init = np.linalg.norm(obj - self.init_tcp)
-        if all(self.quat == QUAT_LIST[0]):
-            obj_to_target = max(abs(self._target_pos[0] - obj[0]),
+
+        obj_to_target = max(abs(self._target_pos[0] - obj[0]),
                                 abs(self._target_pos[1] - obj[1]))
-            # obj_to_target = abs(self._target_pos[1] - obj[1])
-        elif all(self.quat == QUAT_LIST[1]) or all(self.quat == QUAT_LIST[2]):
-            obj_to_target = max(abs(self._target_pos[0] - obj[0]),
-                                abs(self._target_pos[1] - obj[1]))
-            # obj_to_target = abs(self._target_pos[0] - obj[0])
-        else:
-            raise ValueError(f'Got unrecognizable quat: {self.quat}.')
 
         tcp_closed = max(obs[3], 0.0)
-        near_button = reward_utils.tolerance(
+        near_target = reward_utils.tolerance(
             tcp_to_obj,
             bounds=(0, 0.05),
             margin=tcp_to_obj_init,
             sigmoid='long_tail',
         )
-        button_pressed = reward_utils.tolerance(
-            obj_to_target,
-            bounds=(0, 0.005),
-            margin=self.max_dist,
-            sigmoid='long_tail',
-        )
+        # button_pressed = reward_utils.tolerance(
+        #     obj_to_target,
+        #     bounds=(0, 0.005),
+        #     margin=self.max_dist,
+        #     sigmoid='long_tail',
+        # )
 
-        reward = 2 * reward_utils.hamacher_product(tcp_closed, near_button)
-        if tcp_to_obj <= 0.05:
-            reward += 8 * button_pressed
+        reward = 2 * reward_utils.hamacher_product(tcp_closed, near_target)
+        # if tcp_to_obj <= 0.05:
+        #     reward += 8 * button_pressed
         success = obj_to_target <= 0.01
         if success:
             reward = 10
@@ -301,7 +310,7 @@ class SawyerCoffeeButtonEnvV2Display(SawyerXYZEnvDisplay):
             tcp_to_obj,
             obs[3],
             obj_to_target,
-            near_button,
-            button_pressed,
+            near_target,
+            # button_pressed,
             success
         )

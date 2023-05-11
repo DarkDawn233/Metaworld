@@ -20,7 +20,9 @@ QUAT_LIST = [
 ]
 
 
-def random_grid_pos(x_range, y_range, forbid_list=[]):
+def random_grid_pos(x_range, y_range, forbid_list=None):
+    if forbid_list is None:
+        forbid_list = []
     while True:
         x = np.random.randint(int(np.round(x_range[0]*100)), int(np.round(x_range[1]*100))) / 100
         y = np.random.randint(int(np.round(y_range[0]*100)), int(np.round(y_range[1]*100))) / 100
@@ -32,3 +34,22 @@ def random_grid_pos(x_range, y_range, forbid_list=[]):
         if flag:
             break
     return x, y
+
+
+def obstacle_in_path(pos_curr, pos_targ, pos_obst):
+    """
+    Return True if there is an (tall) obstacle (e.g., coffee machine)
+    in the path from current to target position.
+    
+    Args:
+        pos_curr: current position.
+        pos_targ: target position.
+        pos_obst: obstacle position.
+    """
+    return (abs(pos_curr[0] - pos_targ[0]) > abs(pos_obst[0] - pos_targ[0])) \
+            and ((pos_curr[0] - pos_targ[0]) * (pos_obst[0] - pos_targ[0]) > 0)
+
+
+def near_obstacle(pos_curr, pos_obst, tolerance=0.2):
+    """Return True if hand near obstacle"""
+    return np.linalg.norm(pos_curr[:2] - pos_obst[:2]) < tolerance
