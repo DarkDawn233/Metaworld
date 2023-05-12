@@ -231,12 +231,16 @@ if __name__ == "__main__":
     os.environ['CUDA_VISIBLE_DEVICES']='1'
     # generate_data_main()
     task_name = "display"
-    task_list = ['drawer-open', 'drawer-place', 'drawer-close', 'drawer-open', 'drawer-pick']
+    task_list = ['drawer-open', 'drawer-place', 'drawer-close', 'reset', 
+                    'drawer-open', 'drawer-pick', 'coffee-push', 'coffee-button',
+                    'coffee-pull', 'drawer-place', 'drawer-close', 'reset']
+    # task_list = ['coffee-push', 'coffee-button','coffee-pull']
+    # task_list = ['drawer-place']
     for seed in range(1):
         # seed = 6
         random.seed(seed)
         np.random.seed(seed)
-        demo, _ = run_demo(task_name=task_name, task_list=copy.deepcopy(task_list), seed=seed, max_step=1000, debug=True)
+        demo, _ = run_demo(task_name=task_name, task_list=copy.deepcopy(task_list), seed=seed, max_step=2000, debug=True)
         # demo = cal_return_to_go(demo)
         show_demo(task_name=task_name, seed=seed, demo=demo, gif=True)
 

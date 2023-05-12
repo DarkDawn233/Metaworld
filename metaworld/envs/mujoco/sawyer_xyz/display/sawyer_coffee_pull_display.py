@@ -58,7 +58,7 @@ class SawyerCoffeePullEnvV2Display(SawyerXYZEnvDisplay):
             obj_to_target,
             grasp_reward,
             in_place) = self._compute_reward_coffee_pull(action, obs)
-        success = float(obj_to_target <= 0.01)
+        success = float(obj_to_target <= 0.02)
         near_object = float(tcp_to_obj <= 0.03)
         grasp_success = float(self.touching_object and (tcp_open > 0))
 
@@ -277,7 +277,7 @@ class SawyerCoffeePullEnvV2Display(SawyerXYZEnvDisplay):
 
         if tcp_to_obj < 0.04 and tcp_opened > 0:
             reward += 1. + 5. * in_place
-        if np.linalg.norm(obj - target) <= 0.01:
+        if np.linalg.norm(obj - target) <= 0.02:
             reward = 10.
         return (
             reward,

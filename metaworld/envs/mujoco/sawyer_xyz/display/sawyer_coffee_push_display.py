@@ -73,11 +73,11 @@ class SawyerCoffeePushEnvV2Display(SawyerXYZEnvDisplay):
         if success:
             self.succeed = True
             hand_pos = self.get_endeff_pos()
-            info['after_success'] = info['success'] and (hand_pos[2] >= 0.39)
+            info['after_success'] = info['success'] and (hand_pos[2] >= 0.3)
         if self.succeed:
             info['success'] = True
             hand_pos = self.get_endeff_pos()
-            info['after_success'] = info['success'] and (hand_pos[2] >= 0.39)
+            info['after_success'] = info['success'] and (hand_pos[2] >= 0.3)
 
         return reward, info
 
