@@ -13,7 +13,8 @@ import multiprocessing
 # import cv2
 
 # CAMERA_LIST = ["corner3", "corner", "corner2", "topview", "behindGripper"]
-CAMERA_LIST = ["corner3", "corner", "topview"]
+# CAMERA_LIST = ["corner3", "corner", "topview"]
+CAMERA_LIST = ["corner3"]
 
 def show_all_task():
     return TASK_DICK.keys()
@@ -36,7 +37,7 @@ def show_demo(task_name, seed, demo, gif=False):
         root_path = Path(__file__).parent / 'data' / task_name / str(seed)
         root_path.mkdir(exist_ok=True, parents=True)
         if gif:
-            imageio.mimsave(str(root_path / (camera_name + '.gif')), img_list, fps=25)
+            imageio.mimsave(str(root_path / (camera_name + '.gif')), img_list, duration=40)
             continue
         root_path = root_path / camera_name
         root_path.mkdir(exist_ok=True, parents=True)
@@ -299,7 +300,7 @@ def display_random_demo(seed=None, max_task_step=400):
 
         step += 1
         
-    print(f"{seed} {step} {success}: {result_done}")
+    print(f"{seed} {step} {success} {len(result_done)}: {result_done}")
     demo['task_list'] = result_done
     if not success:
         demo['fail_task'] = now_task
@@ -307,10 +308,15 @@ def display_random_demo(seed=None, max_task_step=400):
     return demo, success
 
 def test_display(seed_range=[0, 20]):
+    failed_seeds = []
     for seed in range(*seed_range):
+        # if seed != 13:
+        #     continue
         demo, success = display_random_demo(seed)
         if not success:
+            failed_seeds.append(seed)
             show_demo(task_name='display', seed=seed, demo=demo, gif=True)
+    print(f'Failed seeds: {failed_seeds}')
 
 
 if __name__ == "__main__":
