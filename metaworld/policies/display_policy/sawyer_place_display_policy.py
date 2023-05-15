@@ -43,11 +43,11 @@ class SawyerPlaceV2DisplayPolicy(Policy):
                 target_pos = [o_d['hand_pos'][0], o_d['hand_pos'][1], 0.3]
             action['delta_pos'] = move(o_d['hand_pos'], to_xyz=target_pos, p=10.)
             action['grab_effort'] = -1.
-            return action.array
-
-        to_pos, self.flag = self._desired_pos(o_d, self.flag, info)
-        action['delta_pos'] = safe_move(o_d['hand_pos'], to_xyz=to_pos, p=10.)
-        action['grab_effort'] = self._grab_effort(o_d, self.flag)
+            # return action.array
+        else:
+            to_pos, self.flag = self._desired_pos(o_d, self.flag, info)
+            action['delta_pos'] = safe_move(o_d['hand_pos'], to_xyz=to_pos, p=10.)
+            action['grab_effort'] = self._grab_effort(o_d, self.flag)
 
         return action.array
 
@@ -56,7 +56,6 @@ class SawyerPlaceV2DisplayPolicy(Policy):
     def _desired_pos(o_d, flag, info):
         pos_curr = o_d['hand_pos']
         pos_mug = o_d['mug_pos'] + np.array([0., 0., 0.05])
-        pos_mug_src = o_d['mug_pos']
         pos_goal = o_d['goal_pos']
         grasp_info = o_d['grasp_info']
         # gripper_separation = o_d['gripper_distance_apart']
@@ -83,8 +82,8 @@ class SawyerPlaceV2DisplayPolicy(Policy):
         pos_curr = o_d['hand_pos']
         pos_mug = o_d['mug_pos'] + np.array([0., 0., 0.05])
 
-        if np.linalg.norm(pos_curr[:2] - pos_mug[:2]) <= 0.02 and \
-            abs(pos_curr[2] - pos_mug[2]) <= 0.01:
+        if flag or (np.linalg.norm(pos_curr[:2] - pos_mug[:2]) <= 0.02 and \
+            abs(pos_curr[2] - pos_mug[2]) <= 0.01):
             return 1.
         else:
             return 0.

@@ -344,12 +344,13 @@ class SawyerEnvV2Display(
 
         self.task_list = []
         self.task_step = 0
+        self.after_success_cnt = 0
         self.task_done = True
 
         return self._get_obs()
 
     def _get_pos_objects(self):
-        if not hasattr(self, 'task_list') or len(self.task_list) == 0:
+        if not hasattr(self, 'task_list') or len(self.task_list) == 0 or self.task_list[0] is None:
             return np.zeros(3)
         now_task = self.task_list[0]
         if now_task == 'drawer-close':
@@ -363,7 +364,7 @@ class SawyerEnvV2Display(
         return results
 
     def _get_quat_objects(self):
-        if not hasattr(self, 'task_list') or len(self.task_list) == 0:
+        if not hasattr(self, 'task_list') or len(self.task_list) == 0 or self.task_list[0] is None:
             return np.zeros(4)
         now_task = self.task_list[0]
         if now_task == 'coffee-button':
@@ -391,10 +392,23 @@ class SawyerEnvV2Display(
             info = {
                 'success': float(False),
                 'task_name': None,
+                'task_step': 0,
             }
             return 0., info
 
         now_task = self.task_list[0]
+        if now_task == None:
+            info = {
+                'success': float(False),
+                'task_name': None,
+                'task_step': self.task_step,
+            }
+            self.task_step += 1
+            if self.task_step >= self.rest_step:
+                self.task_list.pop(0)
+                self.task_step = 0
+            return 0., info
+
         if now_task == 'coffee-button':
             if self.task_step == 0:
                 self.max_dist = 0.09
@@ -524,13 +538,21 @@ class SawyerEnvV2Display(
         
         info['task_name'] = now_task
         
+        # if self.task_step == 0:
+            
+
         self.task_step += 1
         info['task_step'] = self.task_step
+        self.after_success_cnt += info.get('after_success', False)
+        if 'after_success' in info:
+            info['after_success'] = self.after_success_cnt >= 10
+
         done = bool(info['success']) and bool(info.get('after_success', True))
         if done:
             done_task = self.task_list.pop(0)
             print(f"{done_task} task done")
             self.task_step = 0
+            self.after_success_cnt = 0
             if self.random_generate_task:
                 self.random_next_task(done_task)
         
@@ -594,6 +616,8 @@ class SawyerEnvV2Display(
             if last_task in optional_task:
                 optional_task.remove(last_task)
         
+        # self.rest_step = 10
+        # self.task_list = [None, random.choice(optional_task)]
         self.task_list = [random.choice(optional_task)]
         print(f"random reset task list: {self.task_list}")
             
