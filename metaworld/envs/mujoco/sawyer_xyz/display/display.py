@@ -108,7 +108,7 @@ class SawyerEnvV2Display(
         self.random_generate_task = False
         self.drawer_open_flag = False
         self.mug_in_drawer_flag = False
-        self.mug_grasped_flag = False
+        # self.mug_grasped_flag = False
 
     @property
     def model_name(self):
@@ -158,6 +158,8 @@ class SawyerEnvV2Display(
             qpos[addr_drawer] = - maxDist + (random.random() * 0.01)
             self.set_state(qpos, qvel)
             self.drawer_open_flag = True
+        else:
+            self.drawer_open_flag = False
     
     def _random_coffee_machine_init_quat(self, index=None):
         init_quat_list = QUAT_LIST[:3]
@@ -523,11 +525,14 @@ class SawyerEnvV2Display(
         info['task_name'] = now_task
         
         self.task_step += 1
+        info['task_step'] = self.task_step
         done = bool(info['success']) and bool(info.get('after_success', True))
         if done:
             done_task = self.task_list.pop(0)
             print(f"{done_task} task done")
             self.task_step = 0
+            if self.random_generate_task:
+                self.random_next_task(done_task)
         
         return reward, info
 
@@ -553,8 +558,45 @@ class SawyerEnvV2Display(
     def _get_mug_pick_pos(self):
         return self.get_body_com('obj') * np.array([1., 1., 0.]) + np.array([0., 0., 0.3])
     
-    # def set_random_generate_task(self, flag=True):
-    #     self.random_generate_task = flag
+    def set_random_generate_task(self, flag=True):
+        self.random_generate_task = flag
+        self.random_next_task(None)
 
-    # def random_next_task(self):
+    def random_next_task(self, last_task):
+        if last_task == 'drawer-close':
+            self.drawer_open_flag = False
+        if last_task == 'drawer-open':
+            self.drawer_open_flag = True
+        if last_task == 'drawer-place':
+            self.mug_in_drawer_flag = True
+        if last_task == 'drawer-pick':
+            self.mug_in_drawer_flag = False
 
+        if last_task == 'coffee-push':
+            optional_task = ['coffee-button']
+        elif last_task == 'coffee-button':
+            optional_task = ['coffee-pull']
+        elif last_task in ['coffee-pull', 'drawer-pick', 'desk-pick']: # mug in hand
+            optional_task = ['coffee-push', 'desk-place']
+            if self.drawer_open_flag: # drawer is open
+                optional_task.append('drawer-place')
+        else:   # mug not in hand
+            optional_task = ['reset']
+            if self.drawer_open_flag: # drawer is open
+                optional_task.append('drawer-close')
+            if not self.drawer_open_flag: # drawer is closed
+                optional_task.append('drawer-open')
+            if self.drawer_open_flag and self.mug_in_drawer_flag: # drawer is open and mug in drawer
+                optional_task.append('drawer-pick')
+            if not self.mug_in_drawer_flag: # mug on desk
+                optional_task.append('desk-pick')
+            
+            if last_task in optional_task:
+                optional_task.remove(last_task)
+        
+        self.task_list = [random.choice(optional_task)]
+        print(f"random reset task list: {self.task_list}")
+            
+
+
+            

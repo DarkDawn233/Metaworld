@@ -586,7 +586,7 @@ class SawyerXYZEnv(SawyerMocapBase, metaclass=abc.ABCMeta):
         caging_xz = reward_utils.tolerance(
             np.linalg.norm(tcp[xz] - obj_pos[xz]),  # "x" in the description above
             bounds=(0, xz_thresh),
-            margin=caging_xz_margin,  # "margin" in the description above
+            margin=max(caging_xz_margin, 0),  # "margin" in the description above
             sigmoid='long_tail',
         )
 

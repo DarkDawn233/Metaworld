@@ -6,6 +6,7 @@ import imageio
 import os
 import copy
 from pathlib import Path
+import json
 import h5py
 import threading
 import multiprocessing
@@ -41,6 +42,15 @@ def show_demo(task_name, seed, demo, gif=False):
         root_path.mkdir(exist_ok=True, parents=True)
         for i, img in enumerate(img_list):
             save_jpeg(img, root_path / (str(i)+".jpeg"))
+    if 'task_list' in demo:
+        file_path = Path(__file__).parent / 'data' / task_name / str(seed) / 'task.json'
+        dict = {
+            'task_list' : demo.get('task_list', []),
+            'fail_task' : demo.get('fail_task', None)
+        }
+        with open (file_path, 'w') as f:
+            json.dump(dict, f, indent=2)
+
 
 def run_demo(task_name, task_list=[], seed=0, max_step=500, debug=False):
     env = TASK_DICK[task_name]['env'](seed=seed)
@@ -227,22 +237,99 @@ def generate_data_main():
         generate_data(task_name=task_name, thread_num=10, total_ep=21000)
         stat_success(task_name=task_name, thread_num=10, total_ep=21000)
 
+def display_random_demo(seed=None, max_task_step=400):
+    random.seed(seed)
+    np.random.seed(seed)
+    env = TASK_DICK['display']['env'](seed=seed)
+    policy = TASK_DICK['display']['policy']()
+
+    demo = {
+        'obs': [],
+        'action': [],
+        'reward': [],
+        'src_reward': [],
+        'done': [],
+        'img': {}
+    }
+
+    obs = env.reset()
+    demo['obs'].append(obs)
+
+    img_dict = get_img(env)
+    for k, v in img_dict.items():
+        demo['img'][k] = [v]
+
+    done = False
+    step = 0
+    info = {}
+    
+    task_step = 0
+    task_num = 0
+
+    env.set_random_generate_task(True)
+    now_task = None
+    result_done = []
+    success = True 
+
+    while task_num < 20:
+        a = policy.get_action(obs, now_task, info)
+        a = np.clip(a, -1, 1)
+
+        demo['action'].append(a)
+        obs, reward, done, info = env.step(a)
+        now_task = info['task_name']
+        task_step = info['task_step']
+
+        if task_step > max_task_step:
+            success = False
+            break
+
+        if done:
+            result_done.append(now_task)
+            task_num += 1
+
+        demo['obs'].append(obs)
+        demo['reward'].append(reward)
+        demo['src_reward'].append(env.last_reward)
+        demo['done'].append(done)
+
+        img_dict = get_img(env)
+        for k, v in img_dict.items():
+            demo['img'][k].append(v)
+
+        step += 1
+        
+    print(f"{seed} {step} {success}: {result_done}")
+    demo['task_list'] = result_done
+    if not success:
+        demo['fail_task'] = now_task
+    
+    return demo, success
+
+def test_display(seed_range=[0, 20]):
+    for seed in range(*seed_range):
+        demo, success = display_random_demo(seed)
+        if not success:
+            show_demo(task_name='display', seed=seed, demo=demo, gif=True)
+
+
 if __name__ == "__main__":
     os.environ['CUDA_VISIBLE_DEVICES']='1'
+    test_display()
     # generate_data_main()
-    task_name = "display"
-    task_list = ['drawer-open', 'drawer-place', 'drawer-close', 'reset', 
-                    'drawer-open', 'drawer-pick', 'coffee-push', 'coffee-button',
-                    'coffee-pull', 'drawer-place', 'drawer-close', 'reset']
-    # task_list = ['coffee-push', 'coffee-button','coffee-pull']
-    # task_list = ['drawer-place']
-    for seed in range(1):
-        # seed = 6
-        random.seed(seed)
-        np.random.seed(seed)
-        demo, _ = run_demo(task_name=task_name, task_list=copy.deepcopy(task_list), seed=seed, max_step=2000, debug=True)
-        # demo = cal_return_to_go(demo)
-        show_demo(task_name=task_name, seed=seed, demo=demo, gif=True)
+    # task_name = "display"
+    # task_list = ['drawer-open', 'drawer-place', 'drawer-close', 'reset', 
+    #                 'drawer-open', 'drawer-pick', 'coffee-push', 'coffee-button',
+    #                 'coffee-pull', 'drawer-place', 'drawer-close', 'reset']
+    # # task_list = ['coffee-push', 'coffee-button','coffee-pull']
+    # # task_list = ['drawer-place']
+    # for seed in range(1):
+    #     # seed = 6
+    #     random.seed(seed)
+    #     np.random.seed(seed)
+    #     demo, _ = run_demo(task_name=task_name, task_list=copy.deepcopy(task_list), seed=seed, max_step=2000, debug=True)
+    #     # demo = cal_return_to_go(demo)
+    #     show_demo(task_name=task_name, seed=seed, demo=demo, gif=True)
 
         # write_h5(task_name=task_name, seed=seed, demo=demo)
     # read_h5(task_name=task_name, seed=seed)
