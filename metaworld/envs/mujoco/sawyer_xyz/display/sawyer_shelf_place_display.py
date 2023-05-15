@@ -44,6 +44,7 @@ class SawyerShelfPlaceEnvV2Display(SawyerXYZEnvDisplay):
             np.hstack((obj_high, goal_high)),
         )
         self.goal_space = Box(np.array(goal_low), np.array(goal_high))
+        self.succeed = False
 
     @property
     def model_name(self):
@@ -68,7 +69,17 @@ class SawyerShelfPlaceEnvV2Display(SawyerXYZEnvDisplay):
 
         }
 
+        if success:
+            self.succeed = True
+            hand_pos = self.get_endeff_pos()
+            info['after_success'] = info['success'] and (hand_pos[2] >= 0.4650)
+        if self.succeed:
+            info['success'] = True
+            hand_pos = self.get_endeff_pos()
+            info['after_success'] = info['success'] and (hand_pos[2] >= 0.4650)
+
         return reward, info
+
 
 
     def _get_pos_objects(self):
@@ -161,3 +172,4 @@ class SawyerShelfPlaceEnvV2Display(SawyerXYZEnvDisplay):
             object_grasped,
             in_place
         ]
+    

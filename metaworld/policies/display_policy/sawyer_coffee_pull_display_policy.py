@@ -44,6 +44,10 @@ class SawyerCoffeePullV2DisplayPolicy(Policy):
         pos_curr = o_d['hand_pos']
         pos_mug = o_d['mug_pos'] + np.array([-.005, .0, .05])
 
+        print(pos_mug)
+        print(pos_curr)
+        print(o_d['target_pos'])
+
         success = info.get('success', False)
         if success:
             state = 'Leaving cup.'

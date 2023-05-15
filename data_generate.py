@@ -8,9 +8,7 @@ from pathlib import Path
 import h5py
 import threading
 import multiprocessing
-# import cv2
 
-# CAMERA_LIST = ["corner3", "corner", "corner2", "topview", "behindGripper"]
 CAMERA_LIST = ["corner3", "corner", "topview"]
 
 def show_all_task():
@@ -34,9 +32,10 @@ def show_demo(task_name, seed, demo, gif=False):
         root_path = Path(__file__).parent / 'data' / task_name / str(seed)
         root_path.mkdir(exist_ok=True, parents=True)
         if gif:
-            imageio.mimsave(str(root_path / (camera_name + '.gif')), img_list, fps=25)
+            imageio.mimsave(str(root_path / (camera_name + '.gif')), img_list, durarion=10)
             continue
         root_path = root_path / camera_name
+        print(root_path)
         root_path.mkdir(exist_ok=True, parents=True)
         for i, img in enumerate(img_list):
             save_jpeg(img, root_path / (str(i)+".jpeg"))
@@ -76,7 +75,6 @@ def run_demo(task_name, seed=0, max_step=500, debug=False):
             ever_done = True
         if ever_done:
             final_done += 1
-        # done = info['success']
         demo['obs'].append(obs)
         demo['reward'].append(reward)
         demo['src_reward'].append(env.last_reward)
@@ -191,7 +189,6 @@ def generate_data(task_name, thread_num=10, total_ep=2000):
     for t_id in range(thread_num):
         begin_seed = t_id * each_thread_ep
         end_seed = (t_id + 1) * each_thread_ep
-        # t = threading.Thread(target=thread_generate_data, args=(t_id, task_name, begin_seed, end_seed))
         t = multiprocessing.Process(target=thread_generate_data, args=(t_id, task_name, begin_seed, end_seed))
         t.start()
         thread_list.append(t)
@@ -216,8 +213,6 @@ def generate_data_main():
     task_name_list = [
         "drawer-close-display",
         "drawer-open-display",
-        # "drawer-place-display",
-        # "drawer-pick-display",
         ]
     for task_name in task_name_list:
         generate_data(task_name=task_name, thread_num=10, total_ep=20000)
@@ -225,20 +220,14 @@ def generate_data_main():
 
 if __name__ == "__main__":
     os.environ['CUDA_VISIBLE_DEVICES']='1'
-    generate_data_main()
-    # task_name = "drawer-open-display"
-    # for seed in range(10):
-    #     # seed = 6
-    #     random.seed(seed)
-    #     np.random.seed(seed)
-    #     demo, _ = run_demo(task_name=task_name, seed=seed, max_step=400, debug=True)
-    #     # demo = cal_return_to_go(demo)
-    #     show_demo(task_name=task_name, seed=seed, demo=demo, gif=True)
 
-        # write_h5(task_name=task_name, seed=seed, demo=demo)
-    # read_h5(task_name=task_name, seed=seed)
+    task_name = "shelf-place-display"
+    for seed in range(10):
+        random.seed(seed)
+        np.random.seed(seed)
+        demo, _ = run_demo(task_name=task_name, seed=seed, max_step=400, debug=True)
+        show_demo(task_name=task_name, seed=seed, demo=demo, gif=True)
 
-    # test_env(task_name)
     
 
     
