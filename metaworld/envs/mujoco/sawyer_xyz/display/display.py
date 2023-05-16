@@ -335,7 +335,7 @@ class SawyerEnvV2Display(
         self._random_init_mug()
 
         self._random_init_color()
-        self._random_init_hand_pos([0, 0.4, 0.2])
+        self._random_init_hand_pos([0, 0.4, 0.4])
 
         self._target_pos = np.zeros(3)
         
@@ -528,7 +528,7 @@ class SawyerEnvV2Display(
             # reward, info = SawyerDeskPlaceEnvV2Display.evaluate_state(self, obs, action)
         elif now_task == 'reset':
             if self.task_step == 0:
-                self._target_pos = np.array([0.0, 0.6, 0.4])
+                self._target_pos = np.array([0.0, 0.4, 0.4])
                 self.succeed = False
                 self.quat = self.coffee_machine_quat
             # reward, info = SawyerResetEnvV2Display.evaluate_state(self, obs, action)
@@ -599,8 +599,12 @@ class SawyerEnvV2Display(
         elif last_task == 'coffee-button':
             optional_task = ['coffee-pull']
         elif last_task in ['coffee-pull', 'drawer-pick', 'desk-pick']: # mug in hand
-            optional_task = ['coffee-push', 'desk-place']
-            if self.drawer_open_flag: # drawer is open
+            optional_task = []
+            if last_task != 'desk-pick':
+                optional_task.append('desk-place')
+            if last_task != 'coffee-pull':
+                optional_task.append('coffee-push')
+            if self.drawer_open_flag and last_task != 'drawer-pick': # drawer is open
                 optional_task.append('drawer-place')
         else:   # mug not in hand
             optional_task = ['reset']
