@@ -132,9 +132,9 @@ class SawyerDeskPlaceV2DisplayPolicy(Policy):
         #     #     pos_targ = deepcopy(pos_curr)
         #     #     pos_targ[2] = 0.45
 
-        print(state)
-        print(f'Current Position: {pos_curr}\n Target Position: {pos_targ}\n'
-              f' Object Position: {pos_obj}\nMug cup position: {pos_mug}')
+        # print(state)
+        # print(f'Current Position: {pos_curr}\n Target Position: {pos_targ}\n'
+        #       f' Object Position: {pos_obj}\nMug cup position: {pos_mug}')
 
         return pos_targ
 

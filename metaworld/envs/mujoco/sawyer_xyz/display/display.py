@@ -1,5 +1,7 @@
 
 from typing import Dict
+from copy import deepcopy
+from enum import Enum
 import numpy as np
 from gym.spaces import Box
 import random
@@ -25,17 +27,29 @@ from metaworld.envs.display_utils import RGB_COLOR_LIST, QUAT_LIST
 from metaworld.envs.display_utils import random_grid_pos
 
 
+COFFEE_BUTTON = 'coffee-button'
+COFFEE_PULL = 'coffee-pull'
+COFFEE_PUSH = 'coffee-push'
+DRAWER_CLOSE = 'drawer-close'
+DRAWER_OPEN = 'drawer-open'
+DRAWER_PICK = 'drawer-pick'
+DRAWER_PLACE = 'drawer-place'
+DESK_PICK = 'desk-pick'
+DESK_PLACE = 'desk-place'
+RESET = 'reset'
+
+
 NAME2ENVS: Dict[str, SawyerXYZEnvDisplay] = {
-    'coffee-button': SawyerCoffeeButtonEnvV2Display,
-    'coffee-pull': SawyerCoffeePullEnvV2Display,
-    'coffee-push': SawyerCoffeePushEnvV2Display,
-    'drawer-close': SawyerDrawerCloseEnvV2Display,
-    'drawer-open': SawyerDrawerOpenEnvV2Display,
-    'drawer-pick': SawyerDrawerPickEnvV2Display,
-    'drawer-place': SawyerDrawerPlaceEnvV2Display,
-    'desk-pick': SawyerDeskPickEnvV2Display,
-    'desk-place': SawyerDeskPlaceEnvV2Display,
-    'reset': SawyerResetEnvV2Display,
+    COFFEE_BUTTON: SawyerCoffeeButtonEnvV2Display,
+    COFFEE_PULL: SawyerCoffeePullEnvV2Display,
+    COFFEE_PUSH: SawyerCoffeePushEnvV2Display,
+    DRAWER_CLOSE: SawyerDrawerCloseEnvV2Display,
+    DRAWER_OPEN: SawyerDrawerOpenEnvV2Display,
+    DRAWER_PICK: SawyerDrawerPickEnvV2Display,
+    DRAWER_PLACE: SawyerDrawerPlaceEnvV2Display,
+    DESK_PICK: SawyerDeskPickEnvV2Display,
+    DESK_PLACE: SawyerDeskPlaceEnvV2Display,
+    RESET: SawyerResetEnvV2Display,
 }
 
 
@@ -53,16 +67,16 @@ class SawyerEnvV2Display(
         ):
 
     TASK_LIST = [
-        'coffee-button',
-        'coffee-pull',
-        'coffee-push',
-        'drawer-close',
-        'drawer-open',
-        'drawer-pick',
-        'drawer-place',
-        'desk-pick',
-        'desk-place',
-        'reset',
+        COFFEE_BUTTON,
+        COFFEE_PULL,
+        COFFEE_PUSH,
+        DRAWER_CLOSE,
+        DRAWER_OPEN,
+        DRAWER_PICK,
+        DRAWER_PLACE,
+        DESK_PICK,
+        DESK_PLACE,
+        RESET,
     ]
     max_path_length = 1e8
 
@@ -193,7 +207,21 @@ class SawyerEnvV2Display(
             self.sim.model.body_name2id('coffee_machine')
         ] = pos
         self.coffee_machine_init_pos = pos
-    
+
+    def _reset_button_offsets(self, pos=None):
+        pos = 0 if pos is None else pos
+        qpos = self.data.qpos.flat.copy()
+        qvel = self.data.qvel.flat.copy()
+        addr = self.model.get_joint_qpos_addr('goal_slidey')
+        qpos[addr] = pos
+        self.set_state(qpos, qvel)
+
+    @property
+    def button_offsets(self):
+        qpos = self.data.qpos.flat.copy()
+        addr = self.model.get_joint_qpos_addr('goal_slidey')
+        return qpos[addr]
+
     def _random_shelf_init_quat(self, index=None):
         init_quat_list = QUAT_LIST[:3]
         if index is None:
@@ -353,9 +381,9 @@ class SawyerEnvV2Display(
         if not hasattr(self, 'task_list') or len(self.task_list) == 0 or self.task_list[0] is None:
             return np.zeros(3)
         now_task = self.task_list[0]
-        if now_task == 'drawer-close':
+        if now_task == DRAWER_CLOSE:
             self.quat_index = self.drawer_quat_index
-        elif now_task == 'drawer-open':
+        elif now_task == DRAWER_OPEN:
             self.quat_index = self.drawer_quat_index
         if now_task in NAME2ENVS.keys():
             results = NAME2ENVS[now_task]._get_pos_objects(self)
@@ -367,7 +395,7 @@ class SawyerEnvV2Display(
         if not hasattr(self, 'task_list') or len(self.task_list) == 0 or self.task_list[0] is None:
             return np.zeros(4)
         now_task = self.task_list[0]
-        if now_task == 'coffee-button':
+        if now_task == COFFEE_BUTTON:
             self.quat = self.coffee_machine_quat
         if now_task in NAME2ENVS.keys():
             results = NAME2ENVS[now_task]._get_quat_objects(self)
@@ -409,7 +437,10 @@ class SawyerEnvV2Display(
                 self.task_step = 0
             return 0., info
 
-        if now_task == 'coffee-button':
+        if self.task_step == 0:
+            self._reset_button_offsets()
+
+        if now_task == COFFEE_BUTTON:
             if self.task_step == 0:
                 self.max_dist = 0.09
                 if self.coffee_machine_quat_index == 0:
@@ -429,7 +460,7 @@ class SawyerEnvV2Display(
                 self.quat = self.coffee_machine_quat
                 self.succeed = False
             # reward, info = super(SawyerEnvV2Display, self).evaluate_state(obs, action)
-        elif now_task == 'coffee-pull':
+        elif now_task == COFFEE_PULL:
             if self.task_step == 0:
                 self.max_dist = 0.03
                 assert hasattr(self, 'mug_init_pos')
@@ -438,7 +469,7 @@ class SawyerEnvV2Display(
                 self.quat = self.coffee_machine_quat
                 self.succeed = False
             # reward, info = super(SawyerCoffeeButtonEnvV2Display, self).evaluate_state(obs, action)
-        elif now_task == 'coffee-push':
+        elif now_task == COFFEE_PUSH:
             if self.task_step == 0:
                 self.max_dist = 0.03
                 if self.coffee_machine_quat_index == 0:
@@ -458,7 +489,7 @@ class SawyerEnvV2Display(
                 self.quat = self.coffee_machine_quat
                 self.succeed = False
             reward, info = super(SawyerCoffeePullEnvV2Display, self).evaluate_state(obs, action)
-        elif now_task == 'drawer-close':
+        elif now_task == DRAWER_CLOSE:
             if self.task_step == 0:
                 if self.drawer_quat_index == 0:
                     self._target_pos = self.get_body_com('drawer') + np.array([.0, -.16, .09])
@@ -470,7 +501,7 @@ class SawyerEnvV2Display(
                     self._target_pos = self.get_body_com('drawer') + np.array([.0, +.16, .09])
                 self.obj_init_pos = self._get_pos_objects()
             # reward, info = super(SawyerCoffeePushEnvV2Display, self).evaluate_state(obs, action)
-        elif now_task == 'drawer-open':
+        elif now_task == DRAWER_OPEN:
             if self.task_step == 0:
                 self.maxDist = 0.15
                 if self.drawer_quat_index == 0:
@@ -486,7 +517,7 @@ class SawyerEnvV2Display(
                     self._target_pos = self.get_body_com('drawer') + np.array([.0, +.16 + self.maxDist, .09])
                     self._handle_pos_init = self._target_pos + np.array([.0, -self.maxDist, .0])
             # reward, info = super(SawyerDrawerCloseEnvV2Display, self).evaluate_state(obs, action)
-        elif now_task == 'drawer-pick':
+        elif now_task == DRAWER_PICK:
             if self.task_step == 0:
                 if self.drawer_quat_index == 0:
                     self._target_pos = self.get_body_com('drawer_link') + np.array([.0, -.01, -.09]) + np.array([.0, .0, .3])
@@ -498,7 +529,7 @@ class SawyerEnvV2Display(
                     self._target_pos = self.get_body_com('drawer_link') + np.array([.0, +.01, -.09]) + np.array([.0, .0, .3])
                 self.obj_init_pos = self.get_body_com('obj')
             # reward, info = super(SawyerDrawerOpenEnvV2Display, self).evaluate_state(obs, action)
-        elif now_task == 'drawer-place':
+        elif now_task == DRAWER_PLACE:
             # print(f"pos obj: {self.get_body_com('obj')}")
             # print(f"drawer link: {self.get_body_com('drawer_link')}")
             if self.task_step == 0:
@@ -512,7 +543,7 @@ class SawyerEnvV2Display(
                     self._target_pos = self.get_body_com('drawer_link') + np.array([.0, +.01, -.09])
                 self.obj_init_pos = self.get_body_com('obj')
             # reward, info = super(SawyerDrawerPickEnvV2Display, self).evaluate_state(obs, action)
-        elif now_task == 'desk-pick':
+        elif now_task == DESK_PICK:
             if self.task_step == 0:
                 # self._target_pos = self._random_init_point()
                 self._target_pos = self._get_mug_pick_pos()
@@ -520,13 +551,13 @@ class SawyerEnvV2Display(
                 self.quat = self.coffee_machine_quat
                 self.succeed = False
             # reward, info = SawyerDeskPickEnvV2Display.evaluate_state(self, obs, action)
-        elif now_task == 'desk-place':
+        elif now_task == DESK_PLACE:
             if self.task_step == 0:
                 self._target_pos = self._random_init_point()
                 self.quat = self.coffee_machine_quat
                 self.succeed = False
             # reward, info = SawyerDeskPlaceEnvV2Display.evaluate_state(self, obs, action)
-        elif now_task == 'reset':
+        elif now_task == RESET:
             if self.task_step == 0:
                 self._target_pos = np.array([0.0, 0.4, 0.4])
                 self.succeed = False
@@ -534,12 +565,10 @@ class SawyerEnvV2Display(
             # reward, info = SawyerResetEnvV2Display.evaluate_state(self, obs, action)
         else:
             raise NotImplementedError()
+
         reward, info = NAME2ENVS[now_task].evaluate_state(self, obs, action)
-        
+
         info['task_name'] = now_task
-        
-        # if self.task_step == 0:
-            
 
         self.task_step += 1
         info['task_step'] = self.task_step
@@ -555,6 +584,11 @@ class SawyerEnvV2Display(
             self.after_success_cnt = 0
             if self.random_generate_task:
                 self.random_next_task(done_task)
+            if not self.check_if_next_task_valid(done_task, self.task_list[0]):
+                raise RuntimeError(
+                    f'The last task is {done_task}, expect the next is one of '
+                    f'{self.generate_valid_tasks(done_task)}, but got '
+                    f'{self.task_list[0]}.')
         
         return reward, info
 
@@ -585,46 +619,52 @@ class SawyerEnvV2Display(
         self.random_next_task(None)
 
     def random_next_task(self, last_task):
-        if last_task == 'drawer-close':
+        if last_task == DRAWER_CLOSE:
             self.drawer_open_flag = False
-        if last_task == 'drawer-open':
+        if last_task == DRAWER_OPEN:
             self.drawer_open_flag = True
-        if last_task == 'drawer-place':
+        if last_task == DRAWER_PLACE:
             self.mug_in_drawer_flag = True
-        if last_task == 'drawer-pick':
+        if last_task == DRAWER_PICK:
             self.mug_in_drawer_flag = False
 
-        if last_task == 'coffee-push':
-            optional_task = ['coffee-button']
-        elif last_task == 'coffee-button':
-            optional_task = ['coffee-pull']
-        elif last_task in ['coffee-pull', 'drawer-pick', 'desk-pick']: # mug in hand
-            optional_task = []
-            if last_task != 'desk-pick':
-                optional_task.append('desk-place')
-            if last_task != 'coffee-pull':
-                optional_task.append('coffee-push')
-            if self.drawer_open_flag and last_task != 'drawer-pick': # drawer is open
-                optional_task.append('drawer-place')
-        else:   # mug not in hand
-            optional_task = ['reset']
-            if self.drawer_open_flag: # drawer is open
-                optional_task.append('drawer-close')
-            if not self.drawer_open_flag: # drawer is closed
-                optional_task.append('drawer-open')
-            if self.drawer_open_flag and self.mug_in_drawer_flag: # drawer is open and mug in drawer
-                optional_task.append('drawer-pick')
-            if not self.mug_in_drawer_flag: # mug on desk
-                optional_task.append('desk-pick')
-            
-            if last_task in optional_task:
-                optional_task.remove(last_task)
-        
-        # self.rest_step = 10
-        # self.task_list = [None, random.choice(optional_task)]
+        optional_task = self.generate_valid_tasks(last_task)
+
         self.task_list = [random.choice(optional_task)]
         print(f"random reset task list: {self.task_list}")
             
+    def check_if_next_task_valid(self, curr_task: str, next_task: str):
+        # Assume drawer_open_flag and mug_in_drawer_flag is set
+        # by calling `random_next_task`
+        valid_tasks = self.generate_valid_tasks(curr_task)
+        valid = next_task in valid_tasks
+        return valid
 
-
-            
+    def generate_valid_tasks(self, former_task: str) -> list[str]:
+        if former_task in [COFFEE_PUSH]:
+            valid_tasks = [COFFEE_BUTTON]
+        elif former_task in [COFFEE_BUTTON]:
+            valid_tasks = [COFFEE_PULL]
+        elif former_task in [COFFEE_PULL, DRAWER_PICK, DESK_PICK]:
+            valid_tasks = []
+            if former_task != DESK_PICK:
+                valid_tasks.append(DESK_PLACE)
+            if former_task != COFFEE_PULL:
+                valid_tasks.append(COFFEE_PUSH)
+            if self.drawer_open_flag and former_task != DRAWER_PICK:
+                # drawer is open
+                valid_tasks.append(DRAWER_PLACE)
+        else:   # mug not in hand
+            valid_tasks = [RESET]
+            if self.drawer_open_flag: # drawer is open
+                valid_tasks.append(DRAWER_CLOSE)
+            if not self.drawer_open_flag: # drawer is closed
+                valid_tasks.append(DRAWER_OPEN)
+            if self.drawer_open_flag and self.mug_in_drawer_flag:
+                # drawer is open and mug in drawer
+                valid_tasks.append(DRAWER_PICK)
+            if not self.mug_in_drawer_flag: # mug on desk
+                valid_tasks.append(DESK_PICK)
+            if former_task in valid_tasks:
+                valid_tasks.remove(former_task)
+        return valid_tasks

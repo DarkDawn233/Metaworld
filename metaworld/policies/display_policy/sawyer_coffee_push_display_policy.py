@@ -118,10 +118,10 @@ class SawyerCoffeePushV2DisplayPolicy(Policy):
             pos_target = np.array([pos_goal[0]-pos_mug[0]+pos_curr[0],
                                    pos_goal[1]-pos_mug[1]+pos_curr[1],
                                    .00])
-        print(f'State: {state}')
-        print(f'Goal xy: {pos_goal}')
-        print(f'Current position: {pos_curr}.')
-        print(f' Target position: {pos_target}.')
+        # print(f'State: {state}')
+        # print(f'Goal xy: {pos_goal}')
+        # print(f'Current position: {pos_curr}.')
+        # print(f' Target position: {pos_target}.')
         return pos_target
 
     @staticmethod

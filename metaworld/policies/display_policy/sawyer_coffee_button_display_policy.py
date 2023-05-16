@@ -40,7 +40,7 @@ class SawyerCoffeeButtonV2DisplayPolicy(Policy):
         pos_button += np.array([.0, .0, .1]) if success else np.array([.0, .0, -.07])
         button_quat = o_d['button_quat']
 
-        print(f'Current position: {pos_curr}\n Button position: {pos_button}\n Target position: {pos_targ}')
+        # print(f'Current position: {pos_curr}\n Button position: {pos_button}\n Target position: {pos_targ}')
         if success:
             if all(button_quat == QUAT_LIST[0]):
                 pos = pos_button + np.array([.0, -.1, .0])
