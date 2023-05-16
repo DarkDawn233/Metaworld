@@ -1,3 +1,6 @@
+from typing import Callable
+from copy import deepcopy
+from dataclasses import dataclass
 import numpy as np
 import matplotlib.colors
 
@@ -20,6 +23,78 @@ QUAT_LIST = [
     [np.sin(np.pi/4), 0., 0., -np.sin(np.pi/4)],    # 俯视逆时针旋转90
     [0., 0., 0., 1.],                               # 俯视旋转180
 ]
+
+
+@dataclass(frozen=True)
+class States:
+    CUP_STATE_AIR = 'AIR'
+    CUP_STATE_DRAWER = 'DRAWER'
+    CUP_STATE_DESK = 'DESK'
+    CUP_STATE_MACHINE = 'MACHINE'
+    CUP_STATE_SHELF = 'SHELF'
+    DRAWER_STATE_OPENED = 'OPENED'
+    DRAWER_STATE_CLOSED = 'CLOSED'
+
+STATES = States()
+
+
+PRECONDITIONS = {
+    'coffee-button': {'cup': lambda x: x == STATES.CUP_STATE_MACHINE},
+    'coffee-pull': {'cup': lambda x: x == STATES.CUP_STATE_MACHINE},
+    'coffee-push': {'cup': lambda x: x == STATES.CUP_STATE_AIR},
+    'drawer-close': {'cup': lambda x: x != STATES.CUP_STATE_AIR,
+                     'drawer': lambda x: x == STATES.DRAWER_STATE_OPENED},
+    'drawer-open': {'cup': lambda x: x != STATES.CUP_STATE_AIR,
+                    'drawer': lambda x: x == STATES.DRAWER_STATE_CLOSED},
+    'drawer-pick': {'cup': lambda x: x == STATES.CUP_STATE_DRAWER,
+                    'drawer': lambda x: x == STATES.DRAWER_STATE_OPENED},
+    'drawer-place': {'cup': lambda x: x == STATES.CUP_STATE_AIR,
+                    'drawer': lambda x: x == STATES.DRAWER_STATE_OPENED},
+    'desk-pick': {'cup': lambda x: x == STATES.CUP_STATE_DESK},
+    'desk-place': {'cup': lambda x: x == STATES.CUP_STATE_AIR},
+    'reset': {'cup': lambda x: x != STATES.CUP_STATE_AIR},
+}
+POSTSTATES = {
+    'coffee-button': {},
+    'coffee-pull': {'cup': STATES.CUP_STATE_AIR},
+    'coffee-push': {'cup': STATES.CUP_STATE_MACHINE},
+    'drawer-close': {'drawer': STATES.DRAWER_STATE_CLOSED},
+    'drawer-open': {'drawer': STATES.DRAWER_STATE_OPENED},
+    'drawer-pick': {'cup': STATES.CUP_STATE_AIR},
+    'drawer-place': {'cup': STATES.CUP_STATE_DRAWER},
+    'desk-pick': {'cup': STATES.CUP_STATE_AIR},
+    'desk-place': {'cup': STATES.CUP_STATE_DESK},
+    'reset': {},
+}
+
+
+def check_task_cond(task: str, states: dict[str, str]) -> bool:
+    obj2conds: dict[str, Callable] = PRECONDITIONS[task]
+    success = True
+    for obj, cond in obj2conds.items():
+        success: bool = success and cond(states[obj])
+        if not success:
+            break
+    return success
+
+
+def change_state(task: str, states: dict[str, str]) -> dict[str, str]:
+    states = deepcopy(states)
+    obj2state: dict[str, str] = POSTSTATES[task]
+    for obj, new_state in obj2state.items():
+        states[obj] = new_state
+    return states
+
+
+def check_if_state_valid(states: dict[str, str]):
+    assert 'cup' in states.keys()
+    assert 'drawer' in states.keys()
+    VALID_CUP_STATES = (STATES.CUP_STATE_AIR, STATES.CUP_STATE_DRAWER,
+                        STATES.CUP_STATE_DESK, STATES.CUP_STATE_MACHINE)
+    VALID_DRAWER_STATES = (STATES.DRAWER_STATE_CLOSED,
+                           STATES.DRAWER_STATE_OPENED)
+    assert states['cup'] in VALID_CUP_STATES
+    assert states['drawer'] in VALID_DRAWER_STATES
 
 
 def random_grid_pos(x_range, y_range, forbid_list=None):
