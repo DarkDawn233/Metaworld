@@ -54,6 +54,6 @@ class SawyerResetV2DisplayPolicy(Policy):
                 or near_obstacle(pos_curr, pos_obj):
             if pos_curr[2] < 0.4:
                 pos_targ[:2] = pos_curr[:2]
-        print(f'Current Position: {pos_curr}\n Target Position: {pos_targ}\n'
-              f' Object Position: {pos_obj}')
+        # print(f'Current Position: {pos_curr}\n Target Position: {pos_targ}\n'
+        #       f' Object Position: {pos_obj}')
         return pos_targ

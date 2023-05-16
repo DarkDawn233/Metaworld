@@ -81,10 +81,10 @@ class SawyerCoffeePullV2DisplayPolicy(Policy):
         else:
             state = 'Moving mug cup to target position.'
             pos_target = o_d['target_pos']
-        print(f'State: {state}')
-        print(f'Current position: {pos_curr}.')
-        print(f' Target position: {pos_target}.')
-        print(f'Mug cup position: {pos_mug}.')
+        # print(f'State: {state}')
+        # print(f'Current position: {pos_curr}.')
+        # print(f' Target position: {pos_target}.')
+        # print(f'Mug cup position: {pos_mug}.')
         return pos_target
 
     @staticmethod

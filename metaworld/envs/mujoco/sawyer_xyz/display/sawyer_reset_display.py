@@ -75,7 +75,7 @@ class SawyerResetEnvV2Display(SawyerXYZEnvDisplay):
             'obj_pos': self.sim.model.body_pos[
                 self.model.body_name2id('coffee_machine')],
         }
-        print(f'Object position: {info["obj_pos"]}')
+        # print(f'Object position: {info["obj_pos"]}')
 
         # info['after_success'] = self._get_after_success(info)
         # if info['success']:

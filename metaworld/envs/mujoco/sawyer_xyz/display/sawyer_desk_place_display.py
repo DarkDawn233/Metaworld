@@ -73,7 +73,7 @@ class SawyerDeskPlaceEnvV2Display(SawyerXYZEnvDisplay):
             'init_pos': self.obj_init_pos,
         }
         info['quat'] = self._get_quat_objects()
-        print(f'-- Object position: {info["obj_pos"]}')
+        # print(f'-- Object position: {info["obj_pos"]}')
 
         if success:
             self.succeed = True
