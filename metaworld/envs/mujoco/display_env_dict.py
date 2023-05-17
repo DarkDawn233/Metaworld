@@ -13,7 +13,8 @@ from metaworld.envs.mujoco.sawyer_xyz.display import (
     SawyerResetEnvV2Display,
     SawyerDeskPickEnvV2Display,
     SawyerDeskPlaceEnvV2Display,
-
+    SawyerBinPickEnvV2Display,
+    SawyerBinPlaceEnvV2Display,
     SawyerDrawerPlaceEnvV2Display,
     SawyerDrawerPickEnvV2Display
 )
@@ -30,7 +31,8 @@ ALL_DISPLAY_ENVIRONMENTS = OrderedDict((
     ('reset-v2-display', SawyerResetEnvV2Display),
     ('desk-pick-v2-display', SawyerDeskPickEnvV2Display),
     ('desk-place-v2-display', SawyerDeskPlaceEnvV2Display),
-
+    ('bin-pick-v2-display', SawyerBinPickEnvV2Display),
+    ('bin-place-v2-display', SawyerBinPlaceEnvV2Display),
     ('drawer-place-v2-display', SawyerDrawerPlaceEnvV2Display),
     ('drawer-pick-v2-display', SawyerDrawerPickEnvV2Display),
 ))

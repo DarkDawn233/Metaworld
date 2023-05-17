@@ -26,45 +26,68 @@ QUAT_LIST = [
 
 
 @dataclass(frozen=True)
+class Tasks:
+    COFFEE_BUTTON = 'coffee-button'
+    COFFEE_PULL = 'coffee-pull'
+    COFFEE_PUSH = 'coffee-push'
+    DRAWER_CLOSE = 'drawer-close'
+    DRAWER_OPEN = 'drawer-open'
+    DRAWER_PICK = 'drawer-pick'
+    DRAWER_PLACE = 'drawer-place'
+    DESK_PICK = 'desk-pick'
+    DESK_PLACE = 'desk-place'
+    RESET = 'reset'
+    BIN_PICK = 'bin-pick'
+    BIN_PLACE = 'bin-place'
+
+
+@dataclass(frozen=True)
 class States:
     CUP_STATE_AIR = 'AIR'
     CUP_STATE_DRAWER = 'DRAWER'
     CUP_STATE_DESK = 'DESK'
+    CUP_STATE_BIN = 'BIN'
     CUP_STATE_MACHINE = 'MACHINE'
     CUP_STATE_SHELF = 'SHELF'
     DRAWER_STATE_OPENED = 'OPENED'
     DRAWER_STATE_CLOSED = 'CLOSED'
 
+
+TASKS = Tasks()
 STATES = States()
 
 
 PRECONDITIONS = {
-    'coffee-button': {'cup': lambda x: x == STATES.CUP_STATE_MACHINE},
-    'coffee-pull': {'cup': lambda x: x == STATES.CUP_STATE_MACHINE},
-    'coffee-push': {'cup': lambda x: x == STATES.CUP_STATE_AIR},
-    'drawer-close': {'cup': lambda x: x != STATES.CUP_STATE_AIR,
-                     'drawer': lambda x: x == STATES.DRAWER_STATE_OPENED},
-    'drawer-open': {'cup': lambda x: x != STATES.CUP_STATE_AIR,
-                    'drawer': lambda x: x == STATES.DRAWER_STATE_CLOSED},
-    'drawer-pick': {'cup': lambda x: x == STATES.CUP_STATE_DRAWER,
-                    'drawer': lambda x: x == STATES.DRAWER_STATE_OPENED},
-    'drawer-place': {'cup': lambda x: x == STATES.CUP_STATE_AIR,
-                    'drawer': lambda x: x == STATES.DRAWER_STATE_OPENED},
-    'desk-pick': {'cup': lambda x: x == STATES.CUP_STATE_DESK},
-    'desk-place': {'cup': lambda x: x == STATES.CUP_STATE_AIR},
-    'reset': {'cup': lambda x: x != STATES.CUP_STATE_AIR},
+    TASKS.COFFEE_BUTTON: {'cup': lambda x: x == STATES.CUP_STATE_MACHINE},
+    TASKS.COFFEE_PULL: {'cup': lambda x: x == STATES.CUP_STATE_MACHINE},
+    TASKS.COFFEE_PUSH: {'cup': lambda x: x == STATES.CUP_STATE_AIR},
+    TASKS.DRAWER_CLOSE: {'cup': lambda x: x != STATES.CUP_STATE_AIR,
+                         'drawer': lambda x: x == STATES.DRAWER_STATE_OPENED},
+    TASKS.DRAWER_OPEN: {'cup': lambda x: x != STATES.CUP_STATE_AIR,
+                        'drawer': lambda x: x == STATES.DRAWER_STATE_CLOSED},
+    TASKS.DRAWER_PICK: {'cup': lambda x: x == STATES.CUP_STATE_DRAWER,
+                        'drawer': lambda x: x == STATES.DRAWER_STATE_OPENED},
+    TASKS.DRAWER_PLACE: {'cup': lambda x: x == STATES.CUP_STATE_AIR,
+                         'drawer': lambda x: x == STATES.DRAWER_STATE_OPENED},
+    TASKS.DESK_PICK: {'cup': lambda x: x == STATES.CUP_STATE_DESK},
+    TASKS.DESK_PLACE: {'cup': lambda x: x == STATES.CUP_STATE_AIR},
+    TASKS.BIN_PICK: {'cup': lambda x: x == STATES.CUP_STATE_BIN},
+    TASKS.BIN_PLACE: {'cup': lambda x: x == STATES.CUP_STATE_AIR},
+    TASKS.RESET: {'cup': lambda x: x != STATES.CUP_STATE_AIR},
 }
 POSTSTATES = {
-    'coffee-button': {},
-    'coffee-pull': {'cup': STATES.CUP_STATE_AIR},
-    'coffee-push': {'cup': STATES.CUP_STATE_MACHINE},
-    'drawer-close': {'drawer': STATES.DRAWER_STATE_CLOSED},
-    'drawer-open': {'drawer': STATES.DRAWER_STATE_OPENED},
-    'drawer-pick': {'cup': STATES.CUP_STATE_AIR},
-    'drawer-place': {'cup': STATES.CUP_STATE_DRAWER},
-    'desk-pick': {'cup': STATES.CUP_STATE_AIR},
-    'desk-place': {'cup': STATES.CUP_STATE_DESK},
-    'reset': {},
+    TASKS.COFFEE_BUTTON: {},
+    TASKS.COFFEE_PULL: {'cup': STATES.CUP_STATE_AIR},
+    TASKS.COFFEE_PUSH: {'cup': STATES.CUP_STATE_MACHINE},
+    TASKS.DRAWER_CLOSE: {'drawer': STATES.DRAWER_STATE_CLOSED},
+    TASKS.DRAWER_OPEN: {'drawer': STATES.DRAWER_STATE_OPENED},
+    TASKS.DRAWER_PICK: {'cup': STATES.CUP_STATE_AIR},
+    TASKS.DRAWER_PLACE: {'cup': STATES.CUP_STATE_DRAWER},
+    TASKS.DESK_PICK: {'cup': STATES.CUP_STATE_AIR},
+    TASKS.DESK_PLACE: {'cup': STATES.CUP_STATE_DESK},
+    TASKS.BIN_PICK: {'cup': STATES.CUP_STATE_AIR},
+    TASKS.BIN_PLACE: {'cup': STATES.CUP_STATE_BIN},
+    TASKS.RESET: {},
 }
 
 

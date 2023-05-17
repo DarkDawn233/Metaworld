@@ -65,7 +65,8 @@ TASK_DICK = {
      'reset-display':               {'env': ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE["reset-v2-display-goal-observable"]            ,'policy': SawyerResetV2DisplayPolicy},
      'desk-pick-display':           {'env': ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE["desk-pick-v2-display-goal-observable"]        ,'policy': SawyerDeskPickV2DisplayPolicy},
      'desk-place-display':          {'env': ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE["desk-place-v2-display-goal-observable"]       ,'policy': SawyerDeskPlaceV2DisplayPolicy},
-
+     'bin-pick-display':            {'env': ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE["bin-pick-v2-display-goal-observable"]         ,'policy': SawyerBinPickV2DisplayPolicy},
+     'bin-place-display':           {'env': ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE["bin-place-v2-display-goal-observable"]        ,'policy': SawyerPlaceV2DisplayPolicy},
      'drawer-place-display':        {'env': ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE["drawer-place-v2-display-goal-observable"]     ,'policy': SawyerDrawerPlaceV2DisplayPolicy},
      'drawer-pick-display':         {'env': ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE["drawer-pick-v2-display-goal-observable"]      ,'policy': SawyerDrawerPickV2DisplayPolicy},
 
