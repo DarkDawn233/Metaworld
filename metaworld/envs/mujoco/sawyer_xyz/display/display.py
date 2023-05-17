@@ -230,23 +230,43 @@ class SawyerEnvV2Display(
         addr = self.model.get_joint_qpos_addr('goal_slidey')
         return qpos[addr]
 
-    def _random_shelf_init_quat(self, index=None):
-        init_quat_list = QUAT_LIST[:3]
-        if index is None:
-            index = random.randint(0, len(init_quat_list)-1)
-        quat = np.array(init_quat_list[index])
+    # def _random_shelf_init_quat(self, index=None):
+    #     init_quat_list = QUAT_LIST[:3]
+    #     if index is None:
+    #         index = random.randint(0, len(init_quat_list)-1)
+    #     quat = np.array(init_quat_list[index])
 
-        self.sim.model.body_quat[
-            self.sim.model.body_name2id('shelf')
-        ] = quat
-        self.shelf_quat_index = index
-        self.shelf_quat = quat
+    #     self.sim.model.body_quat[
+    #         self.sim.model.body_name2id('shelf')
+    #     ] = quat
+    #     self.shelf_quat_index = index
+    #     self.shelf_quat = quat
     
-    def _random_shelf_init_pos(self, pos=None):
-        # TODO
+    # def _random_shelf_init_pos(self, pos=None):
+    #     if pos is None:
+    #         if self.random_level == 1:
+    #             pos_id = self.random_obj_list.index('shelf')
+    #             if pos_id == 0:
+    #                 x_range = [-0.45, -0.35]
+    #             elif pos_id == 1:
+    #                 x_range = [-0.05, 0.05]
+    #             else:
+    #                 x_range = [0.35, 0.45]
+    #             y_range = [0.75, 0.85]
+    #             x, y = random_grid_pos(x_range, y_range)
+    #             pos = [x, y, 0]
+
+    #     pos = np.array(pos)
+
+    #     self.sim.model.body_pos[
+    #         self.sim.model.body_name2id('shelf')
+    #     ] = pos
+    #     self.shelf_init_pos = pos
+    
+    def _random_bin_init_pos(self, pos=None):
         if pos is None:
             if self.random_level == 1:
-                pos_id = self.random_obj_list.index('shelf')
+                pos_id = self.random_obj_list.index('bin')
                 if pos_id == 0:
                     x_range = [-0.45, -0.35]
                 elif pos_id == 1:
@@ -260,9 +280,9 @@ class SawyerEnvV2Display(
         pos = np.array(pos)
 
         self.sim.model.body_pos[
-            self.sim.model.body_name2id('shelf')
+            self.sim.model.body_name2id('bin')
         ] = pos
-        self.shelf_init_pos = pos
+        self.bin_init_pos = pos
     
     def _random_init_mug_pos(self, pos=None):
         # TODO
@@ -274,9 +294,12 @@ class SawyerEnvV2Display(
                                  (self.drawer_init_pos[1]-0.4, self.drawer_init_pos[1]+0.2))
                 machine_forbid = ((self.coffee_machine_init_pos[0]-0.25, self.coffee_machine_init_pos[0]+0.25),
                                   (self.coffee_machine_init_pos[1]-0.3, self.coffee_machine_init_pos[1]+0.2))
-                shelf_forbid = ((self.shelf_init_pos[0]-0.25, self.shelf_init_pos[0]+0.25),
-                                (self.shelf_init_pos[1]-0.2, self.shelf_init_pos[1]+0.2))
-                forbid_list = [drawer_forbid, machine_forbid, shelf_forbid]
+                # shelf_forbid = ((self.shelf_init_pos[0]-0.25, self.shelf_init_pos[0]+0.25),
+                #                 (self.shelf_init_pos[1]-0.2, self.shelf_init_pos[1]+0.2))
+                bin_forbid = ((self.bin_init_pos[0]-0.25, self.bin_init_pos[0]+0.25),
+                                (self.bin_init_pos[1]-0.2, self.bin_init_pos[1]+0.2))
+                # forbid_list = [drawer_forbid, machine_forbid, shelf_forbid]
+                forbid_list = [drawer_forbid, machine_forbid, bin_forbid]
                 x, y = random_grid_pos(x_range, y_range, forbid_list)
                 pos = [x, y, 0]
 
@@ -310,13 +333,21 @@ class SawyerEnvV2Display(
         else:
             raise NotImplementedError()
     
-    def _random_shelf_init(self):
+    # def _random_shelf_init(self):
+    #     if self.random_level == 0:
+    #         self._random_shelf_init_quat(0)
+    #         self._random_shelf_init_pos([-0.4, 0.85, 0.])
+    #     elif self.random_level == 1:
+    #         self._random_shelf_init_quat(0)
+    #         self._random_shelf_init_pos()
+    #     else:
+    #         raise NotImplementedError
+    
+    def _random_bin_init(self):
         if self.random_level == 0:
-            self._random_shelf_init_quat(0)
-            self._random_shelf_init_pos([-0.4, 0.85, 0.])
+            self._random_bin_init_pos([-0.4, 0.85, 0.])
         elif self.random_level == 1:
-            self._random_shelf_init_quat(0)
-            self._random_shelf_init_pos()
+            self._random_bin_init_pos()
         else:
             raise NotImplementedError
     
@@ -341,6 +372,9 @@ class SawyerEnvV2Display(
                 model_name = ['drawercase_tmp', 'drawer_tmp']
             elif model_name == 'shelf':
                 model_name = ['shelf', 'shelf_supports']
+            elif model_name == 'bin':
+                # TODO
+                model_name = ['binA']
             else:
                 model_name = [model_name]
 
@@ -349,7 +383,8 @@ class SawyerEnvV2Display(
                 self.sim.model.geom_rgba[
                     self.sim.model.geom_name2id(name)] = rgba
 
-        model_name_list = ['drawer', 'coffee_machine_body', 'shelf', 'mug']
+        # model_name_list = ['drawer', 'coffee_machine_body', 'shelf', 'mug']
+        model_name_list = ['drawer', 'coffee_machine_body', 'bin', 'mug']
         rgb_list = random.sample(RGB_COLOR_LIST, len(model_name_list))
         for model_name, rgb in zip(model_name_list, rgb_list):
             set_model_rgba(model_name, rgb)
@@ -362,12 +397,14 @@ class SawyerEnvV2Display(
         self.random_level = 1
         self._random_table_and_floor()
   
-        self.random_obj_list = ['drawer', 'coffee_machine', 'shelf']
+        # self.random_obj_list = ['drawer', 'coffee_machine', 'shelf']
+        self.random_obj_list = ['drawer', 'coffee_machine', 'bin']
         random.shuffle(self.random_obj_list)
 
         self._random_drawer_init()
         self._random_coffee_machine_init()
-        self._random_shelf_init()
+        # self._random_shelf_init()
+        self._random_bin_init()
         self._random_init_mug()
 
         self._random_init_color()
@@ -622,10 +659,14 @@ class SawyerEnvV2Display(
             machine_forbid = (
                 (self.coffee_machine_init_pos[0]-0.25, self.coffee_machine_init_pos[0]+0.25),
                 (self.coffee_machine_init_pos[1]-0.3, self.coffee_machine_init_pos[1]+0.2))
-            shelf_forbid = (
-                (self.shelf_init_pos[0]-0.25, self.shelf_init_pos[0]+0.25),
-                (self.shelf_init_pos[1]-0.2, self.shelf_init_pos[1]+0.2))
-            forbid_list = [drawer_forbid, machine_forbid, shelf_forbid]
+            # shelf_forbid = (
+            #     (self.shelf_init_pos[0]-0.25, self.shelf_init_pos[0]+0.25),
+            #     (self.shelf_init_pos[1]-0.2, self.shelf_init_pos[1]+0.2))
+            bin_forbid = (
+                (self.bin_init_pos[0]-0.25, self.bin_init_pos[0]+0.25),
+                (self.bin_init_pos[1]-0.2, self.bin_init_pos[1]+0.2))
+            # forbid_list = [drawer_forbid, machine_forbid, shelf_forbid]
+            forbid_list = [drawer_forbid, machine_forbid, bin_forbid]
             x, y = random_grid_pos(x_range, y_range, forbid_list)
             pos = [x, y, 0]
         pos = np.array(pos)
