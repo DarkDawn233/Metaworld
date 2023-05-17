@@ -25,6 +25,7 @@ class SawyerV2DisplayPolicy(Policy):
     def __init__(self):
         self.policy = None
         self.task_name = None
+        self.last_action = None
 
     @staticmethod
     @assert_fully_parsed
@@ -70,6 +71,15 @@ class SawyerV2DisplayPolicy(Policy):
                 print('Not policy set.')
                 self.policy = None
         if self.policy is None:
-            return np.zeros(4)
+            if self.last_action is None:
+                return np.zeros(4)
+            else:
+                return np.array([0., 0., 0., 1.]) * self.last_action
         else:
-            return self.policy.get_action(obs, info)
+            self.last_action = self.policy.get_action(obs, info)
+            return self.last_action
+    
+    def reset(self):
+        self.policy = None
+        self.task_name = None
+        self.last_action = None
