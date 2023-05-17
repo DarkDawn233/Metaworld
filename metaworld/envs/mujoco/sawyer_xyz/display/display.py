@@ -428,6 +428,10 @@ class SawyerEnvV2Display(
         self.task_step = 0
         self.task_done = False
     
+    def append_task_list(self, task_list):
+        self._check_task_list(task_list)
+        self.task_list += task_list
+    
     @_assert_task_is_set
     def evaluate_state(self, obs, action):
         if len(self.task_list) == 0:
