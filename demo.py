@@ -125,7 +125,7 @@ if __name__ == "__main__":
     test_task_dict = {
         10: ['drawer-open', 'desk-pick', 'drawer-place'],
         500: 'reset',
-        510: ['coffee-push', 'coffee-button', 'coffee-pull', 'desk-place'],
+        510: ['desk-pick', 'coffee-push', 'coffee-button', 'coffee-pull', 'desk-place'],
         650: 'stop'
     }
     # test_task_dict = { # test error

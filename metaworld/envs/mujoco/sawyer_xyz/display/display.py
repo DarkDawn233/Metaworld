@@ -340,6 +340,12 @@ class SawyerEnvV2Display(
                         1 - 不改变drawer/coffee_machine/shelf朝向 随机三个物体的左中右 
         """
         self.random_level = 1
+
+        self.task_list = []
+        self.task_step = 0
+        self.after_success_cnt = 0
+        self.task_done = True
+
         self._random_table_and_floor()
   
         # self.random_obj_list = ['drawer', 'coffee_machine', 'shelf']
@@ -360,13 +366,9 @@ class SawyerEnvV2Display(
         self.obj_init_pos = self._get_pos_objects()
         self.prev_obs = self._get_curr_obs_combined_no_goal()
 
-        self.task_list = []
-        self.task_step = 0
-        self.after_success_cnt = 0
-        self.task_done = True
-
         self._states['cup'] = STATES.CUP_STATE_DESK
         check_if_state_valid(self._states)
+        print("self.obj_init_pos", self.obj_init_pos)
         return self._get_obs()
 
     def _get_pos_objects(self):
@@ -413,6 +415,7 @@ class SawyerEnvV2Display(
     @_assert_task_is_set
     def evaluate_state(self, obs, action):
         if len(self.task_list) == 0:
+            self.task_step = 0
             info = {
                 'success': float(False),
                 'task_name': None,
@@ -538,22 +541,26 @@ class SawyerEnvV2Display(
                 self._target_pos[2] = 0.4
                 self.quat = self.coffee_machine_quat
                 self.succeed = False
+                self.obj_init_pos = self.get_body_com('obj')
         elif now_task == TASKS.DESK_PLACE:
             if self.task_step == 0:
                 self._target_pos = self._random_init_point()
                 self.quat = self.coffee_machine_quat
                 self.succeed = False
+                self.obj_init_pos = self.get_body_com('obj')
         elif now_task == TASKS.BIN_PICK:
             if self.task_step == 0:
                 self._target_pos = self._get_mug_pick_pos()
                 self._target_pos[2] = 0.4
                 self.quat = self.coffee_machine_quat
                 self.succeed = False
+                self.obj_init_pos = self.get_body_com('obj')
         elif now_task == TASKS.BIN_PLACE:
             if self.task_step == 0:
                 self._target_pos = self.get_body_com('bin')
                 self.succeed = False
                 self.quat = self.coffee_machine_quat
+                self.obj_init_pos = self.get_body_com('obj')
         elif now_task == TASKS.RESET:
             if self.task_step == 0:
                 self._target_pos = np.array([0.0, 0.4, 0.4])
