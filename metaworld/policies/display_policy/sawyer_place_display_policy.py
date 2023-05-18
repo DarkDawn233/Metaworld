@@ -60,7 +60,7 @@ class SawyerPlaceV2DisplayPolicy(Policy):
         grasp_info = o_d['grasp_info']
         # gripper_separation = o_d['gripper_distance_apart']
         # If error in the XY plane is greater than 0.02, place end effector above the puck
-        if info['task_name'] == 'drawer-place':
+        if info.get('task_name', None) == 'drawer-place':
             pos_targ = pos_goal + np.array([0., 0., 0.09])
         else:
             pos_targ = pos_goal + np.array([0., 0., 0.05])

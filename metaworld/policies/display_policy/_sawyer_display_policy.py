@@ -20,6 +20,9 @@ from metaworld.policies.display_policy.sawyer_drawer_pick_display_policy import 
 from metaworld.policies.display_policy.sawyer_place_display_policy import SawyerPlaceV2DisplayPolicy
 from metaworld.policies.display_policy.sawyer_pick_display_policy import SawyerPickV2DisplayPolicy
 
+from metaworld.envs.display_utils import TASKS
+
+
 class SawyerV2DisplayPolicy(Policy):
 
     def __init__(self):
@@ -41,31 +44,35 @@ class SawyerV2DisplayPolicy(Policy):
     def get_action(self, obs, now_task, info={}):
         if now_task != self.task_name:
             self.task_name = now_task
-            if now_task == 'coffee-button':
+            if now_task == TASKS.COFFEE_BUTTON:
                 self.policy = SawyerCoffeeButtonV2DisplayPolicy()
-            elif now_task == 'coffee-pull':
+            elif now_task == TASKS.COFFEE_PULL:
                 # self.policy = SawyerCoffeePullV2DisplayPolicy()
                 self.policy = SawyerPickV2DisplayPolicy()
-            elif now_task == 'coffee-push':
+            elif now_task == TASKS.COFFEE_PUSH:
                 # self.policy = SawyerCoffeePushV2DisplayPolicy()
                 self.policy = SawyerPlaceV2DisplayPolicy()
-            elif now_task == 'drawer-close':
+            elif now_task == TASKS.DRAWER_CLOSE:
                 self.policy = SawyerDrawerCloseV2DisplayPolicy()
-            elif now_task == 'drawer-open':
+            elif now_task == TASKS.DRAWER_OPEN:
                 self.policy = SawyerDrawerOpenV2DisplayPolicy()
-            elif now_task == 'drawer-pick':
+            elif now_task == TASKS.DRAWER_PICK:
                 # self.policy = SawyerDrawerPickV2DisplayPolicy()
                 self.policy = SawyerPickV2DisplayPolicy()
-            elif now_task == 'drawer-place':
+            elif now_task == TASKS.DRAWER_PLACE:
                 # self.policy = SawyerDrawerPlaceV2DisplayPolicy()
                 self.policy = SawyerPlaceV2DisplayPolicy()
-            elif now_task == 'desk-pick':
+            elif now_task == TASKS.DESK_PICK:
                 # self.policy = SawyerDeskPickV2DisplayPolicy()
                 self.policy = SawyerPickV2DisplayPolicy()
-            elif now_task == 'desk-place':
+            elif now_task == TASKS.DESK_PLACE:
                 # self.policy = SawyerDeskPlaceV2DisplayPolicy()
                 self.policy = SawyerPlaceV2DisplayPolicy()
-            elif now_task == 'reset':
+            elif now_task == TASKS.BIN_PICK:
+                self.policy = SawyerPickV2DisplayPolicy()
+            elif now_task == TASKS.BIN_PLACE:
+                self.policy = SawyerPlaceV2DisplayPolicy()
+            elif now_task == TASKS.RESET:
                 self.policy = SawyerResetV2DisplayPolicy()
             else:
                 print('Not policy set.')

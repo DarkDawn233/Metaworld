@@ -7,9 +7,12 @@ from metaworld.policies.display_policy.sawyer_shelf_place_display_policy import 
 from metaworld.policies.display_policy.sawyer_reset_display_policy import SawyerResetV2DisplayPolicy
 from metaworld.policies.display_policy.sawyer_desk_pick_display_policy import SawyerDeskPickV2DisplayPolicy
 from metaworld.policies.display_policy.sawyer_desk_place_display_policy import SawyerDeskPlaceV2DisplayPolicy
-
+from metaworld.policies.display_policy.sawyer_bin_pick_display_policy import SawyerBinPickV2DisplayPolicy
+from metaworld.policies.display_policy.sawyer_bin_place_display_policy import SawyerBinPlaceV2DisplayPolicy
 from metaworld.policies.display_policy.sawyer_drawer_place_display_policy import SawyerDrawerPlaceV2DisplayPolicy
 from metaworld.policies.display_policy.sawyer_drawer_pick_display_policy import SawyerDrawerPickV2DisplayPolicy
+
+from metaworld.policies.display_policy.sawyer_place_display_policy import SawyerPlaceV2DisplayPolicy
 
 from metaworld.policies.display_policy._sawyer_display_policy import SawyerV2DisplayPolicy
 
@@ -23,9 +26,12 @@ __all__ = [
     'SawyerResetV2DisplayPolicy',
     'SawyerDeskPickV2DisplayPolicy',
     'SawyerDeskPlaceV2DisplayPolicy',
-
+    'SawyerBinPickV2DisplayPolicy',
+    'SawyerBinPlaceV2DisplayPolicy',
     'SawyerDrawerPlaceV2DisplayPolicy',
     'SawyerDrawerPickV2DisplayPolicy',
+
+    'SawyerPlaceV2DisplayPolicy',
 
     'SawyerV2DisplayPolicy'
 ]
