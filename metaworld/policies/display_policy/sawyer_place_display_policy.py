@@ -37,12 +37,29 @@ class SawyerPlaceV2DisplayPolicy(Policy):
 
         if info.get('success', False) or self.success:
             self.success = True
-            if o_d['grasp_info'] < 0.9:
-                target_pos = o_d['hand_pos']
+            if info.get('task_name', None) == 'drawer-place':
+                # print('grasp_info:', o_d['grasp_info'])
+                if o_d['grasp_info'] < 0.7:
+                    target_pos = o_d['hand_pos']
+                    action['grab_effort'] = -0.5
+                    action['delta_pos'] = move(o_d['hand_pos'], to_xyz=target_pos, p=5.)
+                else:
+                    target_pos = [o_d['hand_pos'][0], o_d['hand_pos'][1], 0.3]
+                    # print('hand_pos:', o_d['hand_pos'])
+                    if o_d['hand_pos'][-1] < 0.2:
+                        action['grab_effort'] = 0.
+                    else:
+                        action['grab_effort'] = -1.
+                    action['delta_pos'] = move(o_d['hand_pos'], to_xyz=target_pos, p=10.)
+                
             else:
-                target_pos = [o_d['hand_pos'][0], o_d['hand_pos'][1], 0.3]
-            action['delta_pos'] = move(o_d['hand_pos'], to_xyz=target_pos, p=10.)
-            action['grab_effort'] = -1.
+                if o_d['grasp_info'] < 0.9:
+                    target_pos = o_d['hand_pos']
+                    action['delta_pos'] = move(o_d['hand_pos'], to_xyz=target_pos, p=5.)
+                else:
+                    target_pos = [o_d['hand_pos'][0], o_d['hand_pos'][1], 0.3]
+                    action['delta_pos'] = move(o_d['hand_pos'], to_xyz=target_pos, p=10.)
+                action['grab_effort'] = -1.
             # return action.array
         else:
             to_pos, self.flag = self._desired_pos(o_d, self.flag, info)
@@ -55,7 +72,7 @@ class SawyerPlaceV2DisplayPolicy(Policy):
     @staticmethod
     def _desired_pos(o_d, flag, info):
         pos_curr = o_d['hand_pos']
-        pos_mug = o_d['mug_pos'] + np.array([0., 0., 0.05])
+        pos_mug = o_d['mug_pos'] + np.array([0., 0., 0.06])
         pos_goal = o_d['goal_pos']
         grasp_info = o_d['grasp_info']
         # gripper_separation = o_d['gripper_distance_apart']
@@ -63,7 +80,7 @@ class SawyerPlaceV2DisplayPolicy(Policy):
         if info.get('task_name', None) == 'drawer-place':
             pos_targ = pos_goal + np.array([0., 0., 0.09])
         else:
-            pos_targ = pos_goal + np.array([0., 0., 0.05])
+            pos_targ = pos_goal + np.array([0., 0., 0.06])
 
         # print(f'Current Position: {pos_curr}')
         if flag:
@@ -85,7 +102,7 @@ class SawyerPlaceV2DisplayPolicy(Policy):
     @staticmethod
     def _grab_effort(o_d, flag):
         pos_curr = o_d['hand_pos']
-        pos_mug = o_d['mug_pos'] + np.array([0., 0., 0.05])
+        pos_mug = o_d['mug_pos'] + np.array([0., 0., 0.06])
 
         if flag or (np.linalg.norm(pos_curr[:2] - pos_mug[:2]) <= 0.02 and \
             abs(pos_curr[2] - pos_mug[2]) <= 0.01):

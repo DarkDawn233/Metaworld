@@ -52,12 +52,12 @@ class SawyerPickV2DisplayPolicy(Policy):
     @staticmethod
     def _desired_pos(o_d, flag, info):
         pos_curr = o_d['hand_pos']
-        pos_mug = o_d['mug_pos'] + np.array([0., 0., 0.05])
+        pos_mug = o_d['mug_pos'] + np.array([0., 0., 0.06])
         pos_goal = o_d['goal_pos']
         grasp_info = o_d['grasp_info']
         # gripper_separation = o_d['gripper_distance_apart']
         # If error in the XY plane is greater than 0.02, place end effector above the puck
-        pos_targ = pos_goal + np.array([0., 0., 0.05])
+        pos_targ = pos_goal + np.array([0., 0., 0.06])
         if flag:
             return pos_targ, True
         if np.linalg.norm(pos_curr[:2] - pos_mug[:2]) <= 0.02 and \
@@ -73,7 +73,7 @@ class SawyerPickV2DisplayPolicy(Policy):
     @staticmethod
     def _grab_effort(o_d, flag):
         pos_curr = o_d['hand_pos']
-        pos_mug = o_d['mug_pos'] + np.array([0., 0., 0.05])
+        pos_mug = o_d['mug_pos'] + np.array([0., 0., 0.06])
 
         if np.linalg.norm(pos_curr[:2] - pos_mug[:2]) <= 0.02 and \
             abs(pos_curr[2] - pos_mug[2]) <= 0.01:
