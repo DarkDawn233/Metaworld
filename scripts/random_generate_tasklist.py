@@ -1,7 +1,7 @@
 import random
 from copy import deepcopy
 from metaworld.envs.display_utils import (
-    TASKS, STATES, PRECONDITIONS, check_task_cond, change_state)
+    TASKS, STATES, PRECONDITIONS, check_task_cond, change_state, TASK_RANDOM_PROBABILITY)
 
 
 TOTAL_TASKS = deepcopy(list(PRECONDITIONS.keys()))
@@ -17,10 +17,12 @@ def simulate(states, num_tasks: int = 20) -> dict[str, int]:
     task_count = {t: 0 for t in TOTAL_TASKS}
     for _ in range(num_tasks):
         valid_tasks = list()
+        valid_probs = list()
         for next_cand_task in TOTAL_TASKS:
             if check_task_cond(next_cand_task, states):
                 valid_tasks.append(next_cand_task)
-        task = random.choice(valid_tasks)
+                valid_probs.append(TASK_RANDOM_PROBABILITY[next_cand_task])
+        task = random.choices(valid_tasks, weights=valid_probs, k=1)[0]
         states = change_state(task, states)
         task_count[task] += 1
     return task_count

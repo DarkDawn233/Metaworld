@@ -32,7 +32,8 @@ from metaworld.envs.display_utils import (random_grid_pos,
                                           TASKS,
                                           STATES,
                                           RGB_COLOR_LIST,
-                                          QUAT_LIST)
+                                          QUAT_LIST,
+                                          TASK_RANDOM_PROBABILITY)
 
 
 NAME2ENVS: Dict[str, SawyerXYZEnvDisplay] = {
@@ -273,7 +274,7 @@ class SawyerEnvV2Display(
         elif self.random_level == 1:
             self._random_drawer_init_quat(0)
             self._random_drawer_init_pos()
-            self._random_drawer_init_open()
+            self._random_drawer_init_open(False)
         else:
             raise NotImplementedError()
 
@@ -615,8 +616,10 @@ class SawyerEnvV2Display(
     def random_generate_next_task(self):
         total_tasks = deepcopy(list(NAME2ENVS.keys()))
         valid_tasks = list()
+        valid_probs = list()
         for next_task in total_tasks:
             if check_task_cond(next_task, self._states):
                 valid_tasks.append(next_task)
-        self.task_list = [random.choice(valid_tasks)]
+                valid_probs.append(TASK_RANDOM_PROBABILITY[next_task])
+        self.task_list = random.choices(valid_tasks, weights=valid_probs, k=1)
         print(f"random reset task list: {self.task_list}")
