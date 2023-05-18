@@ -13,8 +13,8 @@ import multiprocessing
 # import cv2
 
 # CAMERA_LIST = ["corner3", "corner", "corner2", "topview", "behindGripper"]
-# CAMERA_LIST = ["corner3", "corner", "topview"]
-CAMERA_LIST = ["corner3"]
+CAMERA_LIST = ["corner3", "corner", "topview"]
+# CAMERA_LIST = ["corner3"]
 
 def show_all_task():
     return TASK_DICK.keys()
@@ -367,7 +367,7 @@ def test_display(seed_range=[0, 20]):
 if __name__ == "__main__":
     os.environ['CUDA_VISIBLE_DEVICES']='1'
     # test_display()
-    # data_demo(task_list=None, seed=0, total_task_num=50, debug=False)
+    # data_demo(task_list=None, seed=12001, total_task_num=10, debug=True)
     # for seed in range(0, 10):
     #     data_demo(task_list=None, seed=seed, total_task_num=50, debug=False)
     generate_data_main(random_task=True, begin_seed=0, end_seed=20000)
