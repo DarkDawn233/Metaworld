@@ -60,7 +60,17 @@ def clear_demo(demo):
         demo['img'][k] = v[-1:]
     return demo
 
-def data_demo(task_list=None, seed=0, max_task_step=500, debug=False):
+def save_fail_gif(now_task, seed, task_num, demo):
+    file_name = now_task + '-' + str(seed) + '-' + str(task_num) + '.gif'
+    camera_name = 'corner3'
+    img_dict = demo['img']
+    img_list = img_dict[camera_name]
+    root_path = Path(__file__).parent / 'data' / 'fail_gif'
+    root_path.mkdir(exist_ok=True, parents=True)
+    imageio.mimsave(str(root_path / file_name), img_list, duration=40)
+
+
+def data_demo(task_list=None, seed=0, max_task_step=500, total_task_num=20, debug=False):
     random.seed(seed)
     np.random.seed(seed)
     env = TASK_DICK['display']['env'](seed=seed)
@@ -137,13 +147,20 @@ def data_demo(task_list=None, seed=0, max_task_step=500, debug=False):
             # Clear demo
             demo = clear_demo(demo)
 
-            if random_task and task_num > 20:
+            if random_task and task_num > total_task_num:
                 break
             if not random_task and len(env.task_list) == 0:
                 break
 
         step += 1
-        
+    
+    if success:
+        now_task = None
+    
+    if not success:
+        # save fail task gif
+        save_fail_gif(now_task, seed, task_num, demo)
+
     result_info = {
         'task_list': result_done,
         'fail_task': now_task,
@@ -231,7 +248,7 @@ def read_h5(task_name, seed):
 def thread_generate_data(t_id, task_list, begin_seed, end_seed):
     root_path = Path(__file__).parent / 'data' / 'display'
     root_path.mkdir(exist_ok=True, parents=True)
-    success_file_path = root_path / ("fail_" + str(t_id) + ".txt")
+    success_file_path = root_path / ("fail_" + str(begin_seed) + '-' + str(end_seed) + ".txt")
     for seed in range(begin_seed, end_seed):
         
         result_info, success = data_demo(task_list=task_list, seed=seed)
@@ -240,21 +257,22 @@ def thread_generate_data(t_id, task_list, begin_seed, end_seed):
                 string = f"{seed} success_task_num: {len(result_info['task_list'])} fail_task_name: {result_info['fail_task']}"
                 f.write(string + "\n")
 
-def generate_data(task_list, thread_num=10, total_ep=2000):
+def generate_data(task_list, thread_num=10, begin_seed=0, end_seed=21000):
     thread_list = []
+    total_ep = end_seed - begin_seed
     each_thread_ep = total_ep // thread_num
     for t_id in range(thread_num):
-        begin_seed = t_id * each_thread_ep
-        end_seed = (t_id + 1) * each_thread_ep
-        t = multiprocessing.Process(target=thread_generate_data, args=(t_id, task_list, begin_seed, end_seed))
+        thread_begin_seed = begin_seed + t_id * each_thread_ep
+        thread_end_seed = begin_seed + (t_id + 1) * each_thread_ep
+        t = multiprocessing.Process(target=thread_generate_data, args=(t_id, task_list, thread_begin_seed, thread_end_seed))
         t.start()
         thread_list.append(t)
     for t in thread_list:
         t.join()
 
-def generate_data_main(random_task=False):
+def generate_data_main(random_task=False, begin_seed=0, end_seed=210000):
     if random_task:
-        generate_data(task_list=None, thread_num=10, total_ep=21000)
+        generate_data(task_list=None, thread_num=10, begin_seed=begin_seed, end_seed=end_seed)
     else:
         task_lists = [
             ['coffee-push', 'coffee-button','coffee-pull'],
@@ -263,7 +281,7 @@ def generate_data_main(random_task=False):
                 'coffee-pull', 'drawer-place', 'drawer-close', 'reset']
             ]
         for task_list in task_lists:
-            generate_data(task_list=task_list, thread_num=10, total_ep=21000)
+            generate_data(task_list=task_list, thread_num=10, begin_seed=begin_seed, end_seed=end_seed)
 
 def display_random_demo(seed=None, max_task_step=400):
     random.seed(seed)
@@ -349,8 +367,10 @@ def test_display(seed_range=[0, 20]):
 if __name__ == "__main__":
     os.environ['CUDA_VISIBLE_DEVICES']='1'
     # test_display()
-    data_demo(task_list=None, seed=0, debug=True)
-    # generate_data_main()
+    # data_demo(task_list=None, seed=0, total_task_num=50, debug=False)
+    # for seed in range(0, 10):
+    #     data_demo(task_list=None, seed=seed, total_task_num=50, debug=False)
+    generate_data_main(random_task=True, begin_seed=0, end_seed=20000)
     # task_name = "display"
     # task_list = ['drawer-open', 'drawer-place', 'drawer-close', 'reset', 
     #                 'drawer-open', 'drawer-pick', 'coffee-push', 'coffee-button',
