@@ -137,17 +137,22 @@ if __name__ == "__main__":
         """
         目前暂不支持对书架进行操作
         支持的任务列表：[
-            'coffee-button',
-            'coffee-pull',
-            'coffee-push',
-            'drawer-close',
-            'drawer-open',
-            'drawer-pick',
-            'drawer-place',
-            'desk-pick',
-            'desk-place',
-            'reset'
+            'coffee-button' 按咖啡机开关,
+            'coffee-pull'   从咖啡机取走咖啡杯,
+            'coffee-push'   放置咖啡杯至咖啡机,
+            'drawer-close'  关闭抽屉,
+            'drawer-open'   打开抽屉,
+            'drawer-pick'   从抽屉取走咖啡杯,
+            'drawer-place'  放置咖啡杯到抽屉,
+            'desk-pick'     从桌面取走咖啡杯,
+            'desk-place'    放置咖啡杯到桌上,
+            'bin-pick'      从盒子里取走咖啡杯,
+            'bin-place'     放置咖啡杯到盒子里,
+            'reset'         机械臂复位
             ]
+        支持的指令：
+        'reset':    重置环境
+        'stop':     停止环境运行
         """
         img = demo.env_step()
         # TODO 推流
