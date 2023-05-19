@@ -630,3 +630,10 @@ class SawyerEnvV2Display(
                 valid_probs.append(TASK_RANDOM_PROBABILITY[next_task])
         self.task_list = random.choices(valid_tasks, weights=valid_probs, k=1)
         print(f"random reset task list: {self.task_list}")
+
+    @property
+    def states(self) -> Dict[str, str]:
+        return deepcopy(self._states)
+
+    def read_states(self) -> str:
+        return f'当前各个物体状态如下：{self.states}'.replace("'", '').replace('"', '')
