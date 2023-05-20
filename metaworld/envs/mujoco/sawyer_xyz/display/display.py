@@ -1,4 +1,5 @@
 
+import warnings
 from typing import Dict
 from copy import deepcopy
 from dataclasses import dataclass
@@ -29,6 +30,7 @@ from metaworld.envs.display_utils import (random_grid_pos,
                                           check_task_cond,
                                           change_state,
                                           check_if_state_valid,
+                                          find_missing_task,
                                           TASKS,
                                           STATES,
                                           RGB_COLOR_LIST,
@@ -438,8 +440,23 @@ class SawyerEnvV2Display(
 
         if self.task_step == 0:
             if not check_task_cond(now_task, self._states):
-                raise ValueError(
-                    f'Task {now_task} is invalid for state: {self._states}.')
+                warnings.warn(f'Task {now_task} is invalid for state: '
+                              f'{self._states}.')
+                missing_task = find_missing_task(now_task, self._states)
+                if missing_task is None:
+                    warnings.warn(f'Cannot find the missing task, stopped.')
+                    self.task_step = 0
+                    info = {
+                        'success': float(False),
+                        'task_name': None,
+                        'task_step': 0,
+                    }
+                    return 0., info
+                else:
+                    warnings.warn(f'Find a potential missing task '
+                                  f'{missing_task}, execute it first.')
+                    self.task_list.insert(0, missing_task)
+                    now_task = missing_task
             self._reset_button_offsets()
 
         if now_task == TASKS.COFFEE_BUTTON:

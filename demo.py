@@ -109,7 +109,10 @@ class Demo(object):
             root_path.mkdir(exist_ok=True, parents=True)
             imageio.mimsave(str(root_path / (name + '.gif')), self.img_list, duration=40)
             self.img_list = []
-    
+
+    def read_states(self) -> str:
+        return self.env.read_states()
+
 
 if __name__ == "__main__":
     task_name = 'display'
