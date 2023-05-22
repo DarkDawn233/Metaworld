@@ -146,6 +146,56 @@ def check_if_state_valid(states: dict[str, str]):
     assert states['drawer'] in VALID_DRAWER_STATES
 
 
+def detect_insert_missing_tasks(tasklist: list[str]) -> list[str]:
+    tasklist = deepcopy(tasklist)
+    while True:
+        fixed_list = detect_insert_missing_task(tasklist)
+        if len(fixed_list) <= len(tasklist):
+            # Some missing tasks cannot be correctly found or the detection
+            # and fixing progress is done.
+            return fixed_list
+        tasklist = fixed_list
+
+
+def detect_insert_missing_task(tasklist: list[str]) -> list[str]:
+    states = dict(cup=STATES.CUP_STATE_DESK,
+                  drawer=STATES.DRAWER_STATE_CLOSED)
+    tasklist_fixed = deepcopy(tasklist)
+    for idx, task in enumerate(tasklist):
+        if check_task_cond(task, states):
+            states = change_state(task, states)
+        else:
+            # Current task cannot be executed, at least one task missing.
+            missing_task = find_missing_task(task, states)
+            if missing_task is None:
+                warnings.warn('Some tasks are missing but cannot be '
+                              'automatically detected. The following tasks '
+                              f'will be discarded: {tasklist[idx:]}')
+                return tasklist[:idx]
+            else:
+                warnings.warn(f'Find a potential missing task {missing_task}.')
+                tasklist_fixed.insert(idx, missing_task)
+                return tasklist_fixed
+    return tasklist_fixed
+
+
+def find_missing_task(task: str,
+                      states: dict[str, str]) -> str:
+    for cand_task in find_potential_tasks(states):
+        simulated_states = change_state(cand_task, deepcopy(states))
+        if check_task_cond(task, simulated_states):
+            return cand_task
+    return None
+
+
+def find_potential_tasks(states: dict[str, str]) -> list[str]:
+    potential_tasks = []
+    for cand_task in POSTSTATES.keys():
+        if check_task_cond(cand_task, states):
+            potential_tasks.append(cand_task)
+    return potential_tasks
+
+
 def random_grid_pos(x_range, y_range, forbid_list=None):
     if forbid_list is None:
         forbid_list = []
