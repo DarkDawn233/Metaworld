@@ -5,17 +5,20 @@ import imageio
 from pathlib import Path
 from typing import List, Dict
 import copy
+import time
 
 
 CAMERA_LIST = ["corner3", "corner", "corner2", "topview"]
 
 class Demo(object):
-    def __init__(self, task_name, seed=None, save_gif=False) -> None:
+    def __init__(self, task_name, seed=None, fix_reset=True, save_gif=False) -> None:
         random.seed(seed)
         np.random.seed(seed)
         self.env = TASK_DICK[task_name]['env'](seed=seed)
         self.policy = TASK_DICK[task_name]['policy']()
         self.obs = self.env.reset()
+        if fix_reset:
+            self.env.fix_reset()
         self.info = {}
         self.done = False
         self.obs_img = None
@@ -105,7 +108,7 @@ class Demo(object):
             name = 'demo'
         if self.save_gif:
             print(f'saving gif at {self.step} ...')
-            root_path = Path(__file__).parent / 'data'
+            root_path = Path(__file__).parent / 'data_demo'
             root_path.mkdir(exist_ok=True, parents=True)
             imageio.mimsave(str(root_path / (name + '.gif')), self.img_list, duration=40)
             self.img_list = []
@@ -117,7 +120,7 @@ class Demo(object):
 if __name__ == "__main__":
     task_name = 'display'
     seed = 0
-    demo = Demo(task_name=task_name, seed=seed, save_gif=True)
+    demo = Demo(task_name=task_name, seed=seed, fix_reset=True, save_gif=True)
     # done = False
     # test_task_dict = {
     #     10: ['coffee-push', 'coffee-button', 'coffee-pull', 'desk-place'],
@@ -126,14 +129,17 @@ if __name__ == "__main__":
     #     2050: 'stop'
     # }
     test_task_dict = {
-        10: ['drawer-open', 'desk-pick', 'drawer-place'],
-        500: 'reset',
-        510: ['desk-pick', 'coffee-push', 'coffee-button', 'coffee-pull', 'desk-place'],
-        650: 'stop'
+        10: ['drawer-open', 'desk-pick', 'drawer-place', 'drawer-pick'],
+        600: 'reset',
+        610: 'stop'
     }
     # test_task_dict = { # test error
     #     10: ['desk-pick', 'coffee-push', 'coffee-pull', 'coffee-button'],
     #     1000: 'stop'
+    # }
+    # test_task_dict = {
+    #     10: 'stop',
+        
     # }
     step = 0
     while True:
@@ -174,5 +180,5 @@ if __name__ == "__main__":
         step += 1
         if demo.over():
             raise Exception(f"Task {demo.now_task} Policy failed.")
-    demo.gif_save()
+    demo.gif_save(name=time.strftime("%H:%M:%S",time.gmtime()))
     

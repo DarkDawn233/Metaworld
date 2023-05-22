@@ -63,6 +63,7 @@ class SawyerMocapBase(MujocoEnv, metaclass=abc.ABCMeta):
     def __setstate__(self, state):
         self.__dict__ = state['state']
         self.model = mujoco_py.load_model_from_mjb(state['mjb'])
+        # self.model.opt.defaultfriction = 3.0
         self.sim = mujoco_py.MjSim(self.model)
         self.data = self.sim.data
         self.set_env_state(state['env_state'])
