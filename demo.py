@@ -30,6 +30,9 @@ class Demo(object):
         self.save_gif = save_gif
         if self.save_gif:
             self.img_list = []
+        
+        self.task_num = 0
+        self.gif_file_name = time.strftime("%Y-%m-%d,%H:%M:%S",time.gmtime())
     
     def reset_task_list(self, task_list : List[str]) -> None:
         """
@@ -88,6 +91,11 @@ class Demo(object):
         self.step += 1
         if last_task != self.now_task:
             self.task_step = 0
+            if last_task is not None:
+                self.gif_save(str(self.task_num) + '-' + last_task)
+                self.task_num += 1
+            else:
+                self.img_list = []
         else:
             self.task_step += 1
         return self._get_demo_img()
@@ -98,7 +106,10 @@ class Demo(object):
         """
         if self.info.get('task_name', None) is None:
             return False
-        return self.task_step > self.task_max_step
+        over_f = self.task_step > self.task_max_step
+        if over_f:
+            self.gif_save(str(self.task_num) + '-' + self.now_task + '-' + 'fail')
+        return over_f
     
     def gif_save(self, name : str = None) -> None:
         """
@@ -107,10 +118,11 @@ class Demo(object):
         if name is None:
             name = 'demo'
         if self.save_gif:
-            print(f'saving gif at {self.step} ...')
-            root_path = Path(__file__).parent / 'data_demo'
+            root_path = Path(__file__).parent / 'data_demo' / self.gif_file_name
             root_path.mkdir(exist_ok=True, parents=True)
-            imageio.mimsave(str(root_path / (name + '.gif')), self.img_list, duration=40)
+            file_path = root_path / (name + '.gif')
+            print(f'saving gif {file_path}')
+            imageio.mimsave(str(file_path), self.img_list, duration=40)
             self.img_list = []
 
     def read_states(self) -> str:
@@ -180,5 +192,5 @@ if __name__ == "__main__":
         step += 1
         if demo.over():
             raise Exception(f"Task {demo.now_task} Policy failed.")
-    demo.gif_save(name=time.strftime("%H:%M:%S",time.gmtime()))
+    # demo.gif_save(name=time.strftime("%H:%M:%S",time.gmtime()))
     
