@@ -324,7 +324,20 @@ class SawyerEnvV2Display(
                 self._random_init_mug_pos(self.mug_init_pos)
             else:
                 self._random_init_mug_pos()
-    
+    def _reset_hand(self, steps=50):
+        # Overwrite `_reset_hand` method. Initial hand pos is [0.0, 0.4, 0.2].
+        # lower_bound = (-0.5, 0.40, 0.05)
+        # upper_bound = ( 0.5, 0.80, 0.45)
+        # self.hand_init_pos = np.random.uniform(lower_bound, upper_bound)
+        # self.hand_init_pos = upper_bound
+        mocap_quat = np.array([1, 0, 1, 0])
+        for _ in range(steps):
+            self.data.set_mocap_pos('mocap', self.hand_init_pos)
+            self.data.set_mocap_quat('mocap', mocap_quat)
+            self.do_simulation([-1, 1], self.frame_skip)
+        self.init_tcp = self.tcp_center
+        # print(f'Hand position randomly set as {self.hand_init_pos}.')
+
     def _random_init_hand_pos(self, pos=None):
         self.hand_init_pos = pos
         self._reset_hand()
@@ -394,7 +407,7 @@ class SawyerEnvV2Display(
 
         self._states['cup'] = STATES.CUP_STATE_DESK
         check_if_state_valid(self._states)
-        print("self.obj_init_pos", self.obj_init_pos)
+        # print("self.obj_init_pos", self.obj_init_pos)
         return self._get_obs()
     
     def fix_reset(self, flag=True):
@@ -569,8 +582,8 @@ class SawyerEnvV2Display(
                     self._target_pos = self.get_body_com('obj') + np.array([.0, .0, .3])
                 self.obj_init_pos = self.get_body_com('obj')
         elif now_task == TASKS.DRAWER_PLACE:
-            print("obj:", self.get_body_com('obj'))
-            print("drawer:", self.get_body_com('drawer_link'))
+            # print("obj:", self.get_body_com('obj'))
+            # print("drawer:", self.get_body_com('drawer_link'))
             if self.task_step == 0:
                 if self.drawer_quat_index == 0:
                     self._target_pos = self.get_body_com('drawer_link') + np.array([-.01, -.01, -.09]) + np.array([.0, .0, .038])

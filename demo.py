@@ -76,7 +76,7 @@ class Demo(object):
         return img
 
     def env_step(self) -> np.ndarray:
-        print(self.env.task_list)
+        # print(self.env.task_list)
         self.obs_img = self._get_obs_img()
         # TODO 模型前向代替policy
         action = self.policy.get_action(self.obs, self.now_task, self.info)
