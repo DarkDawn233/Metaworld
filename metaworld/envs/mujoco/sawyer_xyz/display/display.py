@@ -80,6 +80,8 @@ class SawyerEnvV2Display(
         TASKS.DESK_PICK,
         TASKS.DESK_PLACE,
         TASKS.RESET,
+        TASKS.BIN_PICK,
+        TASKS.BIN_PLACE,
     ]
     max_path_length = 1e8
 
@@ -465,8 +467,8 @@ class SawyerEnvV2Display(
 
         if self.task_step == 0:
             if not check_task_cond(now_task, self._states):
-                warnings.warn(f'Task {now_task} is invalid for state: '
-                              f'{self._states}.')
+                warnings.warn(f"Task {now_task} is invalid for state: "
+                              f"{self._states}.")
                 missing_task = find_missing_task(now_task, self._states)
                 if missing_task is None:
                     warnings.warn(f'Cannot find the missing task, stopped.')
@@ -478,8 +480,8 @@ class SawyerEnvV2Display(
                     }
                     return 0., info
                 else:
-                    warnings.warn(f'Find a potential missing task '
-                                  f'{missing_task}, execute it first.')
+                    warnings.warn(f"Find a potential missing task "
+                                  f"{missing_task}, execute it first.")
                     self.task_list.insert(0, missing_task)
                     now_task = missing_task
             self._reset_button_offsets()
