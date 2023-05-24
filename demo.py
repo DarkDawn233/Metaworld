@@ -55,6 +55,10 @@ class Demo(object):
         """
         重置环境
         """
+        # if self.now_task is not None:
+        self.gif_save(str(self.task_num) + '-' + str(self.now_task) + '-' + 'last')
+        self.task_num += 1
+
         self.obs = self.env.reset()
         self.info = {}
         self.done = False
@@ -64,6 +68,9 @@ class Demo(object):
         self.now_task = None
         # 重置策略 / 考虑模型是否有重置操作
         self.policy.reset()
+        
+        if self.save_gif:
+            self.img_list = []
 
     def _get_obs_img(self) -> Dict[str, np.ndarray]:
         img_dict = {}
@@ -91,11 +98,9 @@ class Demo(object):
         self.step += 1
         if last_task != self.now_task:
             self.task_step = 0
-            if last_task is not None:
-                self.gif_save(str(self.task_num) + '-' + last_task)
-                self.task_num += 1
-            else:
-                self.img_list = []
+            self.gif_save(str(self.task_num) + '-' + str(last_task))
+            self.task_num += 1
+
         else:
             self.task_step += 1
         return self._get_demo_img()
@@ -141,7 +146,7 @@ if __name__ == "__main__":
     #     2050: 'stop'
     # }
     test_task_dict = {
-        10: ['drawer-open', 'desk-pick', 'drawer-place', 'drawer-pick'],
+        15: ['drawer-open', 'desk-pick', 'drawer-place', 'drawer-pick'],
         600: 'reset',
         610: 'stop'
     }
