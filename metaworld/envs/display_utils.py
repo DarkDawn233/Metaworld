@@ -3,8 +3,12 @@ from copy import deepcopy
 from dataclasses import dataclass
 import numpy as np
 import matplotlib.colors
+from metaworld.envs.env_utils import get_logger
 
 import warnings
+
+
+logger = get_logger(__name__)
 
 COLOR_LIST = [
     "#F27970",
@@ -36,7 +40,7 @@ class Tasks:
     DRAWER_PLACE = 'drawer-place'
     DESK_PICK = 'desk-pick'
     DESK_PLACE = 'desk-place'
-    RESET = 'reset'
+    RESET_HAND = 'reset-hand'
     BIN_PICK = 'bin-pick'
     BIN_PLACE = 'bin-place'
 
@@ -73,7 +77,7 @@ PRECONDITIONS = {
     TASKS.DESK_PLACE: {'cup': lambda x: x == STATES.CUP_STATE_AIR},
     TASKS.BIN_PICK: {'cup': lambda x: x == STATES.CUP_STATE_BIN},
     TASKS.BIN_PLACE: {'cup': lambda x: x == STATES.CUP_STATE_AIR},
-    TASKS.RESET: {'cup': lambda x: x != STATES.CUP_STATE_AIR},
+    TASKS.RESET_HAND: {'cup': lambda x: x != STATES.CUP_STATE_AIR},
 }
 POSTSTATES = {
     TASKS.COFFEE_BUTTON: {},
@@ -87,7 +91,7 @@ POSTSTATES = {
     TASKS.DESK_PLACE: {'cup': STATES.CUP_STATE_DESK},
     TASKS.BIN_PICK: {'cup': STATES.CUP_STATE_AIR},
     TASKS.BIN_PLACE: {'cup': STATES.CUP_STATE_BIN},
-    TASKS.RESET: {},
+    TASKS.RESET_HAND: {},
 }
 TASK_RANDOM_PROBABILITY = {
     # TASKS.COFFEE_BUTTON: 1/0.052,
@@ -101,7 +105,7 @@ TASK_RANDOM_PROBABILITY = {
     # TASKS.DESK_PLACE: 1/0.065,
     # TASKS.BIN_PICK: 1/0.055,
     # TASKS.BIN_PLACE: 1/0.065,
-    # TASKS.RESET: 1/0.248,
+    # TASKS.RESET_HAND: 1/0.248,
     TASKS.COFFEE_BUTTON: 1,
     TASKS.COFFEE_PULL: 1,
     TASKS.COFFEE_PUSH: 1,
@@ -113,7 +117,7 @@ TASK_RANDOM_PROBABILITY = {
     TASKS.DESK_PLACE: 1,
     TASKS.BIN_PICK: 1,
     TASKS.BIN_PLACE: 1,
-    TASKS.RESET: 0.05,
+    TASKS.RESET_HAND: 0.05,
 }
 
 
@@ -168,12 +172,16 @@ def detect_insert_missing_task(tasklist: list[str]) -> list[str]:
             # Current task cannot be executed, at least one task missing.
             missing_task = find_missing_task(task, states)
             if missing_task is None:
-                warnings.warn('Some tasks are missing but cannot be '
-                              'automatically detected. The following tasks '
-                              f'will be discarded: {tasklist[idx:]}')
+                message = ('Some tasks are missing but cannot be '
+                           'automatically detected. The following tasks '
+                           f'will be discarded: {tasklist[idx:]}')
+                warnings.warn(message)
+                logger.warn(message)
                 return tasklist[:idx]
             else:
-                warnings.warn(f'Find a potential missing task {missing_task}.')
+                message = (f'Find a potential missing task {missing_task}.')
+                warnings.warn(message)
+                logger.warn(message)
                 tasklist_fixed.insert(idx, missing_task)
                 return tasklist_fixed
     return tasklist_fixed

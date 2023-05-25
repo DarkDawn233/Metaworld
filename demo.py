@@ -5,7 +5,12 @@ import imageio
 from pathlib import Path
 from typing import List, Dict
 import copy
+import logging
 import time
+from metaworld.envs.env_utils import get_logger
+
+
+logger = get_logger(__name__)
 
 
 CAMERA_LIST = ["corner3", "corner", "corner2", "topview"]
@@ -40,7 +45,7 @@ class Demo(object):
         重置任务列表/终止任务
         """
         assert isinstance(task_list, list)
-        print(f"reset_task_list: {task_list}")
+        logger.info(f"reset_task_list: {task_list}")
         self.env.reset_task_list(task_list)
     
     def append_task_list(self, task_list : List[str]) -> None:
@@ -48,7 +53,7 @@ class Demo(object):
         在当前任务列表后添加任务列表
         """
         assert isinstance(task_list, list)
-        print(f"append_task_list: {task_list}")
+        logger.info(f"append_task_list: {task_list}")
         self.env.append_task_list(task_list)
     
     def reset(self) -> None:
@@ -86,7 +91,7 @@ class Demo(object):
         return img
 
     def env_step(self) -> np.ndarray:
-        # print(self.env.task_list)
+        # logger.info(self.env.task_list)
         self.obs_img = self._get_obs_img()
         # TODO 模型前向代替policy
         action = self.policy.get_action(self.obs, self.now_task, self.info)
@@ -126,7 +131,7 @@ class Demo(object):
             root_path = Path(__file__).parent / 'data_demo' / self.gif_file_name
             root_path.mkdir(exist_ok=True, parents=True)
             file_path = root_path / (name + '.gif')
-            print(f'saving gif {file_path}')
+            logger.info(f'saving gif {file_path}')
             imageio.mimsave(str(file_path), self.img_list, duration=40)
             self.img_list = []
 
@@ -146,9 +151,9 @@ if __name__ == "__main__":
     #     2050: 'stop'
     # }
     test_task_dict = {
-        15: ['drawer-open', 'desk-pick', 'drawer-place', 'drawer-pick'],
-        600: 'reset',
-        610: 'stop'
+        15: ['drawer-open', 'reset-hand', 'desk-pick', 'drawer-place', 'drawer-pick'],
+        1600: 'reset',
+        1610: 'stop'
     }
     # test_task_dict = { # test error
     #     10: ['desk-pick', 'coffee-push', 'coffee-pull', 'coffee-button'],

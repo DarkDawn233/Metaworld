@@ -4,7 +4,7 @@ from metaworld.policies.display_policy.sawyer_coffee_push_display_policy import 
 from metaworld.policies.display_policy.sawyer_drawer_close_display_policy import SawyerDrawerCloseV2DisplayPolicy
 from metaworld.policies.display_policy.sawyer_drawer_open_display_policy import SawyerDrawerOpenV2DisplayPolicy
 from metaworld.policies.display_policy.sawyer_shelf_place_display_policy import SawyerShelfPlaceV2DisplayPolicy
-from metaworld.policies.display_policy.sawyer_reset_display_policy import SawyerResetV2DisplayPolicy
+from metaworld.policies.display_policy.sawyer_reset_display_policy import SawyerResetHandV2DisplayPolicy
 from metaworld.policies.display_policy.sawyer_desk_pick_display_policy import SawyerDeskPickV2DisplayPolicy
 from metaworld.policies.display_policy.sawyer_desk_place_display_policy import SawyerDeskPlaceV2DisplayPolicy
 from metaworld.policies.display_policy.sawyer_bin_pick_display_policy import SawyerBinPickV2DisplayPolicy
@@ -23,7 +23,7 @@ __all__ = [
     'SawyerDrawerCloseV2DisplayPolicy',
     'SawyerDrawerOpenV2DisplayPolicy',
     'SawyerShelfPlaceV2DisplayPolicy',
-    'SawyerResetV2DisplayPolicy',
+    'SawyerResetHandV2DisplayPolicy',
     'SawyerDeskPickV2DisplayPolicy',
     'SawyerDeskPlaceV2DisplayPolicy',
     'SawyerBinPickV2DisplayPolicy',
