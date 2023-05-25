@@ -9,7 +9,7 @@ from metaworld.envs.mujoco.sawyer_xyz.sawyer_xyz_env import _assert_task_is_set
 
 from metaworld.envs.mujoco.sawyer_xyz.display.sawyer_base import SawyerXYZEnvDisplay
 
-class SawyerResetEnvV2Display(SawyerXYZEnvDisplay):
+class SawyerResetHandEnvV2Display(SawyerXYZEnvDisplay):
 
     def __init__(self):
 

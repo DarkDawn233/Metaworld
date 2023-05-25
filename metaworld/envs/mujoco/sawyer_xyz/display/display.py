@@ -2,6 +2,7 @@
 import warnings
 from typing import Dict
 from copy import deepcopy
+import logging
 from dataclasses import dataclass
 import numpy as np
 from gym.spaces import Box
@@ -10,6 +11,7 @@ import random
 from metaworld.envs import reward_utils
 from metaworld.envs.asset_path_utils import full_display_path_for
 from metaworld.envs.mujoco.sawyer_xyz.sawyer_xyz_env import _assert_task_is_set
+from metaworld.envs.env_utils import get_logger
 
 from metaworld.envs.mujoco.sawyer_xyz.display.sawyer_base import SawyerXYZEnvDisplay
 from metaworld.envs.mujoco.sawyer_xyz.display.sawyer_coffee_button_display import SawyerCoffeeButtonEnvV2Display
@@ -24,7 +26,7 @@ from metaworld.envs.mujoco.sawyer_xyz.display.sawyer_desk_pick_display import Sa
 from metaworld.envs.mujoco.sawyer_xyz.display.sawyer_desk_place_display import SawyerDeskPlaceEnvV2Display
 from metaworld.envs.mujoco.sawyer_xyz.display.sawyer_bin_pick_display import SawyerBinPickEnvV2Display
 from metaworld.envs.mujoco.sawyer_xyz.display.sawyer_bin_place_display import SawyerBinPlaceEnvV2Display
-from metaworld.envs.mujoco.sawyer_xyz.display.sawyer_reset_display import SawyerResetEnvV2Display
+from metaworld.envs.mujoco.sawyer_xyz.display.sawyer_reset_display import SawyerResetHandEnvV2Display
 
 from metaworld.envs.display_utils import (random_grid_pos,
                                           check_task_cond,
@@ -50,8 +52,11 @@ NAME2ENVS: Dict[str, SawyerXYZEnvDisplay] = {
     TASKS.DESK_PLACE: SawyerDeskPlaceEnvV2Display,
     TASKS.BIN_PICK: SawyerBinPickEnvV2Display,
     TASKS.BIN_PLACE: SawyerBinPlaceEnvV2Display,
-    TASKS.RESET: SawyerResetEnvV2Display,
+    TASKS.RESET_HAND: SawyerResetHandEnvV2Display,
 }
+
+
+logger = get_logger(__name__)
 
 
 class SawyerEnvV2Display(
@@ -66,23 +71,10 @@ class SawyerEnvV2Display(
             SawyerDeskPlaceEnvV2Display,
             SawyerBinPickEnvV2Display,
             SawyerBinPlaceEnvV2Display,
-            SawyerResetEnvV2Display,
+            SawyerResetHandEnvV2Display,
         ):
 
-    TASK_LIST = [
-        TASKS.COFFEE_BUTTON,
-        TASKS.COFFEE_PULL,
-        TASKS.COFFEE_PUSH,
-        TASKS.DRAWER_CLOSE,
-        TASKS.DRAWER_OPEN,
-        TASKS.DRAWER_PICK,
-        TASKS.DRAWER_PLACE,
-        TASKS.DESK_PICK,
-        TASKS.DESK_PLACE,
-        TASKS.RESET,
-        TASKS.BIN_PICK,
-        TASKS.BIN_PLACE,
-    ]
+    TASK_LIST = list(NAME2ENVS.keys())
     max_path_length = 1e8
 
     def __init__(self):
@@ -126,8 +118,6 @@ class SawyerEnvV2Display(
 
         self.random_generate_task = False
         self._states = {'cup': None, 'drawer': None}
-
-        self.fix_reset_flag = False # 固定重置环境
 
     @property
     def model_name(self):
@@ -194,8 +184,7 @@ class SawyerEnvV2Display(
     
     def _random_coffee_machine_init_pos(self, pos=None):
         # TODO
-        if pos is None:
-            if self.random_level == 1:
+        if self.random_level == 1:
                 pos_id = self.random_obj_list.index('coffee_machine')
                 if pos_id == 0:
                     x_range = [-0.45, -0.35]
@@ -273,71 +262,42 @@ class SawyerEnvV2Display(
         qpos[addr_mug[0]: addr_mug[0] + 3] = pos
         self.set_state(qpos, qvel)
 
-    def _random_drawer_init(self, fix_flag):
+    def _random_drawer_init(self):
         if self.random_level == 0:
             self._random_drawer_init_quat(0)
             self._random_drawer_init_pos([0.4, 0.85, 0.])
             self._random_drawer_init_open(True)
         elif self.random_level == 1:
-            if fix_flag:
-                self._random_drawer_init_quat(0)
-                self._random_drawer_init_pos(self.drawer_init_pos)
-                self._random_drawer_init_open(False)
-            else:
-                self._random_drawer_init_quat(0)
-                self._random_drawer_init_pos()
-                self._random_drawer_init_open(False)
-
+            self._random_drawer_init_quat(0)
+            self._random_drawer_init_pos()
+            self._random_drawer_init_open(False)
         else:
             raise NotImplementedError()
 
-    def _random_coffee_machine_init(self, fix_flag):
+    def _random_coffee_machine_init(self):
         if self.random_level == 0:
             self._random_coffee_machine_init_quat(0)
             self._random_coffee_machine_init_pos([0., 0.85, 0.])
         elif self.random_level == 1:
-            if fix_flag:
-                self._random_coffee_machine_init_quat(0)
-                self._random_coffee_machine_init_pos(self.coffee_machine_init_pos)
-            else:
-                self._random_coffee_machine_init_quat(0)
-                self._random_coffee_machine_init_pos()
+            self._random_coffee_machine_init_quat(0)
+            self._random_coffee_machine_init_pos()
         else:
             raise NotImplementedError()
 
-    def _random_bin_init(self, fix_flag):
+    def _random_bin_init(self):
         if self.random_level == 0:
             self._random_bin_init_pos([-0.4, 0.85, 0.])
         elif self.random_level == 1:
-            if fix_flag:
-                self._random_bin_init_pos(self.bin_init_pos)
-            else:
-                self._random_bin_init_pos()
+            self._random_bin_init_pos()
         else:
             raise NotImplementedError
     
-    def _random_init_mug(self, fix_flag):
+    def _random_init_mug(self):
         if self.random_level == 0:
             self._random_init_mug_pos([-0.4, 0.65, 0.])
         else:
-            if fix_flag:
-                self._random_init_mug_pos(self.mug_init_pos)
-            else:
-                self._random_init_mug_pos()
-    def _reset_hand(self, steps=50):
-        # Overwrite `_reset_hand` method. Initial hand pos is [0.0, 0.4, 0.2].
-        # lower_bound = (-0.5, 0.40, 0.05)
-        # upper_bound = ( 0.5, 0.80, 0.45)
-        # self.hand_init_pos = np.random.uniform(lower_bound, upper_bound)
-        # self.hand_init_pos = upper_bound
-        mocap_quat = np.array([1, 0, 1, 0])
-        for _ in range(steps):
-            self.data.set_mocap_pos('mocap', self.hand_init_pos)
-            self.data.set_mocap_quat('mocap', mocap_quat)
-            self.do_simulation([-1, 1], self.frame_skip)
-        self.init_tcp = self.tcp_center
-        # print(f'Hand position randomly set as {self.hand_init_pos}.')
-
+            self._random_init_mug_pos()
+    
     def _random_init_hand_pos(self, pos=None):
         self.hand_init_pos = pos
         self._reset_hand()
@@ -375,7 +335,6 @@ class SawyerEnvV2Display(
         random_level:   0 - 固定物体位置
                         1 - 不改变drawer/coffee_machine/shelf朝向 随机三个物体的左中右 
         """
-
         self.random_level = 1
 
         self.task_list = []
@@ -383,21 +342,19 @@ class SawyerEnvV2Display(
         self.after_success_cnt = 0
         self.task_done = True
 
-        
         self._random_table_and_floor()
-            # self.random_obj_list = ['drawer', 'coffee_machine', 'shelf']
-        if not self.fix_reset_flag:
-            self.random_obj_list = ['drawer', 'coffee_machine', 'bin']
-            random.shuffle(self.random_obj_list)
+  
+        # self.random_self._statesobj_list = ['drawer', 'coffee_machine', 'shelf']
+        self.random_obj_list = ['drawer', 'coffee_machine', 'bin']
+        random.shuffle(self.random_obj_list)
 
-        self._random_drawer_init(self.fix_reset_flag)
-        self._random_coffee_machine_init(self.fix_reset_flag)
+        self._random_drawer_init()
+        self._random_coffee_machine_init()
         # self._random_shelf_init()
-        self._random_bin_init(self.fix_reset_flag)
-        self._random_init_mug(self.fix_reset_flag)
+        self._random_bin_init()
+        self._random_init_mug()
 
         self._random_init_color()
-            
         self._random_init_hand_pos([0, 0.4, 0.4])
 
         self._target_pos = np.zeros(3)
@@ -406,12 +363,9 @@ class SawyerEnvV2Display(
         self.prev_obs = self._get_curr_obs_combined_no_goal()
 
         self._states['cup'] = STATES.CUP_STATE_DESK
-        check_if_state_valid(self._states)
-        # print("self.obj_init_pos", self.obj_init_pos)
+        check_if_state_valid(self.states)
+        logger.info(f"self.obj_init_pos: {self.obj_init_pos}")
         return self._get_obs()
-    
-    def fix_reset(self, flag=True):
-        self.fix_reset_flag = flag
 
     def _get_pos_objects(self):
         if not hasattr(self, 'task_list') or len(self.task_list) == 0 or self.task_list[0] is None:
@@ -479,10 +433,10 @@ class SawyerEnvV2Display(
             return 0., info
 
         if self.task_step == 0:
-            if not check_task_cond(now_task, self._states):
-                warnings.warn(f"Task {now_task} is invalid for state: "
-                              f"{self._states}.")
-                missing_task = find_missing_task(now_task, self._states)
+            if not check_task_cond(now_task, self.states):
+                warnings.warn(f'Task {now_task} is invalid for state: '
+                              f'{self.states}.')
+                missing_task = find_missing_task(now_task, self.states)
                 if missing_task is None:
                     warnings.warn(f'Cannot find the missing task, stopped.')
                     self.task_step = 0
@@ -493,11 +447,12 @@ class SawyerEnvV2Display(
                     }
                     return 0., info
                 else:
-                    warnings.warn(f"Find a potential missing task "
-                                  f"{missing_task}, execute it first.")
+                    warnings.warn(f'Find a potential missing task '
+                                  f'{missing_task}, execute it first.')
                     self.task_list.insert(0, missing_task)
                     now_task = missing_task
             self._reset_button_offsets()
+            logger.info(f'TaskList: {self.task_list}')
 
         if now_task == TASKS.COFFEE_BUTTON:
             if self.task_step == 0:
@@ -557,7 +512,7 @@ class SawyerEnvV2Display(
                 self.obj_init_pos = self._get_pos_objects()
         elif now_task == TASKS.DRAWER_OPEN:
             if self.task_step == 0:
-                self.maxDist = 0.17
+                self.maxDist = 0.15
                 if self.drawer_quat_index == 0:
                     self._target_pos = self.get_body_com('drawer') + np.array([.0, -.16 - self.maxDist, .09])
                     self._handle_pos_init = self._target_pos + np.array([.0, self.maxDist, .0])
@@ -573,20 +528,18 @@ class SawyerEnvV2Display(
         elif now_task == TASKS.DRAWER_PICK:
             if self.task_step == 0:
                 if self.drawer_quat_index == 0:
-                    self._target_pos = self.get_body_com('obj') + np.array([.0, .0, .3])
+                    self._target_pos = self.get_body_com('drawer_link') + np.array([.0, -.01, -.09]) + np.array([.0, .0, .3])
                 elif self.drawer_quat_index == 1:
-                    self._target_pos = self.get_body_com('obj') + np.array([.0, .0, .3])
+                    self._target_pos = self.get_body_com('drawer_link') + np.array([+.01, .0, -.09]) + np.array([.0, .0, .3])
                 elif self.drawer_quat_index == 2:
-                    self._target_pos = self.get_body_com('obj') + np.array([.0, .0, .3])
+                    self._target_pos = self.get_body_com('drawer_link') + np.array([-.01, .0, -.09]) + np.array([.0, .0, .3])
                 else:
-                    self._target_pos = self.get_body_com('obj') + np.array([.0, .0, .3])
+                    self._target_pos = self.get_body_com('drawer_link') + np.array([.0, +.01, -.09]) + np.array([.0, .0, .3])
                 self.obj_init_pos = self.get_body_com('obj')
         elif now_task == TASKS.DRAWER_PLACE:
-            # print("obj:", self.get_body_com('obj'))
-            # print("drawer:", self.get_body_com('drawer_link'))
             if self.task_step == 0:
                 if self.drawer_quat_index == 0:
-                    self._target_pos = self.get_body_com('drawer_link') + np.array([-.01, -.01, -.09]) + np.array([.0, .0, .038])
+                    self._target_pos = self.get_body_com('drawer_link') + np.array([.0, -.01, -.09])
                 elif self.drawer_quat_index == 1:
                     self._target_pos = self.get_body_com('drawer_link') + np.array([+.01, .0, -.09])
                 elif self.drawer_quat_index == 2:
@@ -620,7 +573,7 @@ class SawyerEnvV2Display(
                 self.succeed = False
                 self.quat = self.coffee_machine_quat
                 self.obj_init_pos = self.get_body_com('obj')
-        elif now_task == TASKS.RESET:
+        elif now_task == TASKS.RESET_HAND:
             if self.task_step == 0:
                 self._target_pos = np.array([0.0, 0.4, 0.4])
                 self.succeed = False
@@ -641,13 +594,13 @@ class SawyerEnvV2Display(
         done = bool(info['success']) and bool(info.get('after_success', True))
         if done:
             done_task = self.task_list.pop(0)
-            print(f"{done_task} task done")
+            logger.info(f"{done_task} task done")
             self.task_step = 0
             self.after_success_cnt = 0
-            print(f'Finished Task: {done_task}')
-            print(f'Old States: {self._states}')
-            self._states = change_state(done_task, self._states)
-            print(f'New States: {self._states}')
+            logger.info(f'Finished Task: {done_task}')
+            logger.info(f'Old States: {self.states}')
+            self._states = change_state(done_task, self.states)
+            logger.info(f'New States: {self.states}')
             if self.random_generate_task:
                 self.random_generate_next_task()
 
@@ -684,11 +637,11 @@ class SawyerEnvV2Display(
         valid_tasks = list()
         valid_probs = list()
         for next_task in total_tasks:
-            if check_task_cond(next_task, self._states):
+            if check_task_cond(next_task, self.states):
                 valid_tasks.append(next_task)
                 valid_probs.append(TASK_RANDOM_PROBABILITY[next_task])
         self.task_list = random.choices(valid_tasks, weights=valid_probs, k=1)
-        print(f"random reset task list: {self.task_list}")
+        logger.info(f"random reset task list: {self.task_list}")
 
     @property
     def states(self) -> Dict[str, str]:

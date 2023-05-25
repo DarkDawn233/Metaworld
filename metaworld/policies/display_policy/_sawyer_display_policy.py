@@ -12,7 +12,7 @@ from metaworld.policies.display_policy.sawyer_drawer_open_display_policy import 
 from metaworld.policies.display_policy.sawyer_shelf_place_display_policy import SawyerShelfPlaceV2DisplayPolicy
 from metaworld.policies.display_policy.sawyer_desk_pick_display_policy import SawyerDeskPickV2DisplayPolicy
 from metaworld.policies.display_policy.sawyer_desk_place_display_policy import SawyerDeskPlaceV2DisplayPolicy
-from metaworld.policies.display_policy.sawyer_reset_display_policy import SawyerResetV2DisplayPolicy
+from metaworld.policies.display_policy.sawyer_reset_display_policy import SawyerResetHandV2DisplayPolicy
 
 from metaworld.policies.display_policy.sawyer_drawer_place_display_policy import SawyerDrawerPlaceV2DisplayPolicy
 from metaworld.policies.display_policy.sawyer_drawer_pick_display_policy import SawyerDrawerPickV2DisplayPolicy
@@ -72,8 +72,8 @@ class SawyerV2DisplayPolicy(Policy):
                 self.policy = SawyerPickV2DisplayPolicy()
             elif now_task == TASKS.BIN_PLACE:
                 self.policy = SawyerPlaceV2DisplayPolicy()
-            elif now_task == TASKS.RESET:
-                self.policy = SawyerResetV2DisplayPolicy()
+            elif now_task == TASKS.RESET_HAND:
+                self.policy = SawyerResetHandV2DisplayPolicy()
             else:
                 print('Not policy set.')
                 self.policy = None

@@ -6,7 +6,7 @@ from metaworld.policies.policy import Policy, assert_fully_parsed, move
 from metaworld.envs.display_utils import obstacle_in_path, near_obstacle
 
 
-class SawyerResetV2DisplayPolicy(Policy):
+class SawyerResetHandV2DisplayPolicy(Policy):
 
     @staticmethod
     @assert_fully_parsed
