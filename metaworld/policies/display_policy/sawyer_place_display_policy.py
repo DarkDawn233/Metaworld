@@ -88,7 +88,7 @@ class SawyerPlaceV2DisplayPolicy(Policy):
             return pos_targ, True
         if np.linalg.norm(pos_curr[:2] - pos_mug[:2]) <= 0.02 and \
             abs(pos_curr[2] - pos_mug[2]) <= 0.01:
-            if grasp_info > 0.6:
+            if grasp_info > 0.7:
                 # print(f' Target Position: {pos_mug}')
                 return pos_mug, False
             else:

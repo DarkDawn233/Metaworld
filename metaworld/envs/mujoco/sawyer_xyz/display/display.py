@@ -257,12 +257,21 @@ class SawyerEnvV2Display(
                 x, y = random_grid_pos(x_range, y_range, forbid_list)
                 pos = [x, y, 0]
 
-        pos = np.array(pos)
+        # pos = np.array(pos)
+        pos_quat = np.array(pos + [1., 0., 0., 0.])
         self.mug_init_pos = pos
         qpos = self.data.qpos.flat.copy()
         qvel = self.data.qvel.flat.copy()
         addr_mug = self.model.get_joint_qpos_addr('mug_obj')
-        qpos[addr_mug[0]: addr_mug[0] + 3] = pos
+        qpos[addr_mug[0]: addr_mug[1]] = pos_quat
+        self.set_state(qpos, qvel)
+    
+    def _reset_mug_quat(self):
+        qpos = self.data.qpos.flat.copy()
+        qvel = self.data.qvel.flat.copy()
+        addr_mug = self.model.get_joint_qpos_addr('mug_obj')
+        # qpos[addr_mug[0]: addr_mug[1]] = pos_quat
+        qpos[addr_mug[0]+3: addr_mug[0]+7] = np.array(np.array([1., 0., 0., 0.]))
         self.set_state(qpos, qvel)
 
     def _random_drawer_init(self, fix_flag):
@@ -449,6 +458,7 @@ class SawyerEnvV2Display(
     
     @_assert_task_is_set
     def evaluate_state(self, obs, action):
+        self._reset_mug_quat()
         if len(self.task_list) == 0:
             self.task_step = 0
             info = {
@@ -567,24 +577,26 @@ class SawyerEnvV2Display(
         elif now_task == TASKS.DRAWER_PICK:
             if self.task_step == 0:
                 if self.drawer_quat_index == 0:
-                    self._target_pos = self.get_body_com('drawer_link') + np.array([.0, -.01, -.09]) + np.array([.0, .0, .3])
+                    self._target_pos = self.get_body_com('obj') + np.array([.0, .0, .3])
                 elif self.drawer_quat_index == 1:
-                    self._target_pos = self.get_body_com('drawer_link') + np.array([+.01, .0, -.09]) + np.array([.0, .0, .3])
+                    self._target_pos = self.get_body_com('obj') + np.array([.0, .0, .3])
                 elif self.drawer_quat_index == 2:
-                    self._target_pos = self.get_body_com('drawer_link') + np.array([-.01, .0, -.09]) + np.array([.0, .0, .3])
+                    self._target_pos = self.get_body_com('obj') + np.array([.0, .0, .3])
                 else:
-                    self._target_pos = self.get_body_com('drawer_link') + np.array([.0, +.01, -.09]) + np.array([.0, .0, .3])
+                    self._target_pos = self.get_body_com('obj') + np.array([.0, .0, .3])
                 self.obj_init_pos = self.get_body_com('obj')
         elif now_task == TASKS.DRAWER_PLACE:
+            # print("obj:", self.get_body_com('obj'))
+            # print("drawer:", self.get_body_com('drawer_link'))
             if self.task_step == 0:
                 if self.drawer_quat_index == 0:
-                    self._target_pos = self.get_body_com('drawer_link') + np.array([.0, -.01, -.09])
+                    self._target_pos = self.get_body_com('drawer_link') + np.array([-.01, -.01, -.09]) + np.array([.0, .0, .038])
                 elif self.drawer_quat_index == 1:
-                    self._target_pos = self.get_body_com('drawer_link') + np.array([+.01, .0, -.09])
+                    self._target_pos = self.get_body_com('drawer_link') + np.array([+.01, .0, -.09]) + np.array([.0, .0, .038])
                 elif self.drawer_quat_index == 2:
-                    self._target_pos = self.get_body_com('drawer_link') + np.array([-.01, .0, -.09])
+                    self._target_pos = self.get_body_com('drawer_link') + np.array([-.01, .0, -.09]) + np.array([.0, .0, .038])
                 else:
-                    self._target_pos = self.get_body_com('drawer_link') + np.array([.0, +.01, -.09])
+                    self._target_pos = self.get_body_com('drawer_link') + np.array([.0, +.01, -.09]) + np.array([.0, .0, .038])
                 self.obj_init_pos = self.get_body_com('obj')
         elif now_task == TASKS.DESK_PICK:
             if self.task_step == 0:
