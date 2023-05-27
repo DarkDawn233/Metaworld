@@ -151,13 +151,19 @@ if __name__ == "__main__":
     #     2050: 'stop'
     # }
     test_task_dict = {
-        15: ['drawer-open', 'reset-hand', 'desk-pick', 'drawer-place', 'drawer-pick'],
+        15: ['drawer-open', 'desk-pick', 'drawer-place', 'drawer-close', 'drawer-open', 'drawer-pick', 'bin-place'],
         1600: 'reset',
-        1610: 'stop'
+        1601: 'stop'
     }
-    # test_task_dict = { # test error
-    #     10: ['desk-pick', 'coffee-push', 'coffee-pull', 'coffee-button'],
-    #     1000: 'stop'
+    # test_task_dict = {
+    #     400: ['drawer-open', 'desk-pick', 'drawer-place', 'drawer-pick', 'desk-place'],
+    #     1200: 'reset',
+    #     1201: 'stop'
+    # }
+    # test_task_dict = {
+    #     10: ['desk-pick', 'bin-place'],
+    #     500: 'reset',
+    #     501: 'stop'
     # }
     # test_task_dict = {
     #     10: 'stop',

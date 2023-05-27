@@ -456,9 +456,48 @@ class SawyerEnvV2Display(
         self._check_task_list(task_list)
         self.task_list += task_list
     
+    def _judge_grab(self):
+        # pos_mug = deepcopy(self.get_body_com('obj'))
+        # if not hasattr(self, 'last_pos_mug'):
+        #     flag = True
+        # else:
+        #     print(self.last_pos_mug)
+        #     print(pos_mug)
+        #     print(np.linalg.norm(self.last_pos_mug[:2] - pos_mug[:2]))
+        #     flag = np.linalg.norm(self.last_pos_mug[:2] - pos_mug[:2]) <= 0.001
+        # self.last_pos_mug = pos_mug
+        # return flag
+
+        # pos_hand = self.get_endeff_pos()
+
+        # finger_right, finger_left = (
+        #     self._get_site_pos('rightEndEffector'),
+        #     self._get_site_pos('leftEndEffector')
+        # )
+        # gripper_distance_apart = np.linalg.norm(finger_right - finger_left)
+        # gripper_distance_apart = np.clip(gripper_distance_apart / 0.1, 0., 1.)
+
+        # print("pos_mug", self.get_body_com('obj'))
+        # pos_mug = self.get_body_com('obj') + np.array([0., 0., 0.07])
+        # print("gripper_distance_apart:", np.linalg.norm(pos_hand - pos_mug), gripper_distance_apart)
+        # flag = (np.linalg.norm(pos_hand[:2] - pos_mug[:2]) <= 0.02) and (gripper_distance_apart < 0.57)
+        # return flag
+
+        pos_mug = self.get_body_com('obj')
+        pos_bin = self.bin_init_pos
+        pos_drawer = self.get_body_com('drawer_link')
+        if np.linalg.norm(pos_bin[:2] - pos_mug[:2]) <= 0.1:
+            return pos_mug[2] > 0.01
+        elif np.linalg.norm(pos_drawer[:2] - pos_mug[:2]) <= 0.1:
+            return pos_mug[2] > 0.08
+        return pos_mug[2] > 0.005
+    
     @_assert_task_is_set
     def evaluate_state(self, obs, action):
-        self._reset_mug_quat()
+        # print("pos_mug", self.get_body_com('obj'))
+        # self._reset_mug_quat()
+        if not self._judge_grab():
+            self._reset_mug_quat()
         if len(self.task_list) == 0:
             self.task_step = 0
             info = {
