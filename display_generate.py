@@ -60,12 +60,15 @@ def clear_demo(demo):
         demo['img'][k] = v[-1:]
     return demo
 
-def save_fail_gif(now_task, seed, task_num, demo):
+def save_fail_gif(now_task, seed, task_num, demo, fail=True):
     file_name = now_task + '-' + str(seed) + '-' + str(task_num) + '.gif'
     camera_name = 'corner3'
     img_dict = demo['img']
     img_list = img_dict[camera_name]
-    root_path = Path(__file__).parent / 'data' / 'fail_gif'
+    if not fail:
+        root_path = Path(__file__).parent / 'data' / 'success_gif'
+    else:
+        root_path = Path(__file__).parent / 'data' / 'fail_gif'
     root_path.mkdir(exist_ok=True, parents=True)
     imageio.mimsave(str(root_path / file_name), img_list, duration=40)
 
@@ -140,6 +143,7 @@ def data_demo(task_list=None, seed=0, max_task_step=500, total_task_num=20, debu
 
         if done:
             # Save demo
+            save_fail_gif(now_task, seed, task_num, demo, False)
             demo = cal_return_to_go(demo)
             write_h5(now_task, seed, task_num, demo, save_gif=debug)
             result_done.append(now_task)
@@ -272,7 +276,7 @@ def generate_data(task_list, thread_num=10, begin_seed=0, end_seed=21000):
 
 def generate_data_main(random_task=False, begin_seed=0, end_seed=210000):
     if random_task:
-        generate_data(task_list=None, thread_num=10, begin_seed=begin_seed, end_seed=end_seed)
+        generate_data(task_list=None, thread_num=1, begin_seed=begin_seed, end_seed=end_seed)
     else:
         task_lists = [
             ['coffee-push', 'coffee-button','coffee-pull'],
@@ -370,7 +374,7 @@ if __name__ == "__main__":
     # data_demo(task_list=None, seed=12001, total_task_num=10, debug=True)
     # for seed in range(0, 10):
     #     data_demo(task_list=None, seed=seed, total_task_num=50, debug=False)
-    generate_data_main(random_task=True, begin_seed=0, end_seed=20000)
+    generate_data_main(random_task=True, begin_seed=2, end_seed=2+1)
     # task_name = "display"
     # task_list = ['drawer-open', 'drawer-place', 'drawer-close', 'reset', 
     #                 'drawer-open', 'drawer-pick', 'coffee-push', 'coffee-button',
