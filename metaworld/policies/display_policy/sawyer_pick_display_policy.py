@@ -46,6 +46,7 @@ class SawyerPickV2DisplayPolicy(Policy):
         action['delta_pos'] = safe_move(o_d['hand_pos'], to_xyz=to_pos, p=10.)
         action['grab_effort'] = self._grab_effort(o_d, self.flag)
 
+        # print("action:", action.array)
         return action.array
 
 
@@ -75,6 +76,8 @@ class SawyerPickV2DisplayPolicy(Policy):
         pos_curr = o_d['hand_pos']
         pos_mug = o_d['mug_pos'] + np.array([0., 0., 0.07])
 
+        if flag:
+            return 1.
         if np.linalg.norm(pos_curr[:2] - pos_mug[:2]) <= 0.02 and \
             abs(pos_curr[2] - pos_mug[2]) <= 0.01:
             return 1.

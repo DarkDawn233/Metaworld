@@ -121,6 +121,8 @@ class SawyerEnvV2Display(
 
         self.fix_reset_flag = False # 固定重置环境
 
+        self.last_step_mug_pos = None
+
     @property
     def model_name(self):
         return full_display_path_for('sawyer_xyz/_sawyer_display.xml')
@@ -265,14 +267,6 @@ class SawyerEnvV2Display(
         addr_mug = self.model.get_joint_qpos_addr('mug_obj')
         qpos[addr_mug[0]: addr_mug[1]] = pos_quat
         self.set_state(qpos, qvel)
-    
-    def _reset_mug_quat(self):
-        qpos = self.data.qpos.flat.copy()
-        qvel = self.data.qvel.flat.copy()
-        addr_mug = self.model.get_joint_qpos_addr('mug_obj')
-        # qpos[addr_mug[0]: addr_mug[1]] = pos_quat
-        qpos[addr_mug[0]+3: addr_mug[0]+7] = np.array(np.array([1., 0., 0., 0.]))
-        self.set_state(qpos, qvel)
 
     def _random_drawer_init(self, fix_flag):
         if self.random_level == 0:
@@ -385,6 +379,8 @@ class SawyerEnvV2Display(
         self.after_success_cnt = 0
         self.task_done = True
 
+        self.last_step_mug_pos = None
+
         
         self._random_table_and_floor()
             # self.random_obj_list = ['drawer', 'coffee_machine', 'shelf']
@@ -457,31 +453,6 @@ class SawyerEnvV2Display(
         self.task_list += task_list
     
     def _judge_grab(self):
-        # pos_mug = deepcopy(self.get_body_com('obj'))
-        # if not hasattr(self, 'last_pos_mug'):
-        #     flag = True
-        # else:
-        #     print(self.last_pos_mug)
-        #     print(pos_mug)
-        #     print(np.linalg.norm(self.last_pos_mug[:2] - pos_mug[:2]))
-        #     flag = np.linalg.norm(self.last_pos_mug[:2] - pos_mug[:2]) <= 0.001
-        # self.last_pos_mug = pos_mug
-        # return flag
-
-        # pos_hand = self.get_endeff_pos()
-
-        # finger_right, finger_left = (
-        #     self._get_site_pos('rightEndEffector'),
-        #     self._get_site_pos('leftEndEffector')
-        # )
-        # gripper_distance_apart = np.linalg.norm(finger_right - finger_left)
-        # gripper_distance_apart = np.clip(gripper_distance_apart / 0.1, 0., 1.)
-
-        # print("pos_mug", self.get_body_com('obj'))
-        # pos_mug = self.get_body_com('obj') + np.array([0., 0., 0.07])
-        # print("gripper_distance_apart:", np.linalg.norm(pos_hand - pos_mug), gripper_distance_apart)
-        # flag = (np.linalg.norm(pos_hand[:2] - pos_mug[:2]) <= 0.02) and (gripper_distance_apart < 0.57)
-        # return flag
 
         pos_mug = self.get_body_com('obj')
         pos_bin = self.bin_init_pos
@@ -489,15 +460,41 @@ class SawyerEnvV2Display(
         if np.linalg.norm(pos_bin[:2] - pos_mug[:2]) <= 0.1:
             return pos_mug[2] > 0.01
         elif np.linalg.norm(pos_drawer[:2] - pos_mug[:2]) <= 0.1:
-            return pos_mug[2] > 0.08
-        return pos_mug[2] > 0.005
+            return pos_mug[2] > 0.06
+        return pos_mug[2] > 0.0
+    
+    def _reset_state(self, success):
+        if self.last_step_mug_pos is None:
+            self.last_step_mug_pos = deepcopy(self.get_body_com('obj'))
+        
+        qpos = self.data.qpos.flat.copy()
+        qvel = self.data.qvel.flat.copy()
+        addr_drawer = self.model.get_joint_qpos_addr('drawer_goal_slidey')
+
+        if not self._judge_grab():
+            addr_mug = self.model.get_joint_qpos_addr('mug_obj')
+            # qpos[addr_mug[0]: addr_mug[1]] = pos_quat
+            # qpos[addr_mug[0]+0: addr_mug[0]+2] = self.last_step_mug_pos[:2]
+            if len(self.task_list) >= 1 and "place" in self.task_list[0]:
+                qpos[addr_mug[0]+0: addr_mug[0]+3] = self._target_pos
+            qpos[addr_mug[0]+3: addr_mug[0]+7] = np.array(np.array([1., 0., 0., 0.]))
+        if len(self.task_list) >= 1 and self.task_list[0] not in ["drawer-close", "drawer-open"]:
+            
+            if self.states["drawer"] == STATES.DRAWER_STATE_CLOSED:
+                qpos[addr_drawer] = 0
+            else:
+                qpos[addr_drawer] = -0.16
+        elif len(self.task_list) >= 1 and self.task_list[0] == "drawer-close" and success:
+            qpos[addr_drawer] = 0
+        elif len(self.task_list) >= 1 and self.task_list[0] == "drawer-open" and success:
+            qpos[addr_drawer] = -0.16
+
+        self.set_state(qpos, qvel)
+        self.last_step_mug_pos = deepcopy(self.get_body_com('obj'))
     
     @_assert_task_is_set
     def evaluate_state(self, obs, action):
-        # print("pos_mug", self.get_body_com('obj'))
-        # self._reset_mug_quat()
-        if not self._judge_grab():
-            self._reset_mug_quat()
+
         if len(self.task_list) == 0:
             self.task_step = 0
             info = {
@@ -505,6 +502,7 @@ class SawyerEnvV2Display(
                 'task_name': None,
                 'task_step': 0,
             }
+            self._reset_state(info['success'])
             return 0., info
 
         now_task = self.task_list[0]
@@ -518,6 +516,7 @@ class SawyerEnvV2Display(
             if self.task_step >= self.rest_step:
                 self.task_list.pop(0)
                 self.task_step = 0
+            self._reset_state(info['success'])
             return 0., info
 
         if self.task_step == 0:
@@ -533,6 +532,7 @@ class SawyerEnvV2Display(
                         'task_name': None,
                         'task_step': 0,
                     }
+                    self._reset_state(info['success'])
                     return 0., info
                 else:
                     warnings.warn(f'Find a potential missing task '
@@ -625,8 +625,6 @@ class SawyerEnvV2Display(
                     self._target_pos = self.get_body_com('obj') + np.array([.0, .0, .3])
                 self.obj_init_pos = self.get_body_com('obj')
         elif now_task == TASKS.DRAWER_PLACE:
-            # print("obj:", self.get_body_com('obj'))
-            # print("drawer:", self.get_body_com('drawer_link'))
             if self.task_step == 0:
                 if self.drawer_quat_index == 0:
                     self._target_pos = self.get_body_com('drawer_link') + np.array([-.01, -.01, -.09]) + np.array([.0, .0, .038])
@@ -682,6 +680,9 @@ class SawyerEnvV2Display(
             info['after_success'] = self.after_success_cnt >= 10
 
         done = bool(info['success']) and bool(info.get('after_success', True))
+
+        self._reset_state(info['success'])
+
         if done:
             done_task = self.task_list.pop(0)
             logger.info(f"{done_task} task done")
