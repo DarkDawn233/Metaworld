@@ -458,7 +458,7 @@ class SawyerEnvV2Display(
         pos_bin = self.bin_init_pos
         pos_drawer = self.get_body_com('drawer_link')
         if np.linalg.norm(pos_bin[:2] - pos_mug[:2]) <= 0.1:
-            return pos_mug[2] > 0.01
+            return pos_mug[2] > 0.03
         elif np.linalg.norm(pos_drawer[:2] - pos_mug[:2]) <= 0.1:
             return pos_mug[2] > 0.06
         return pos_mug[2] > 0.0
@@ -494,7 +494,6 @@ class SawyerEnvV2Display(
     
     @_assert_task_is_set
     def evaluate_state(self, obs, action):
-
         if len(self.task_list) == 0:
             self.task_step = 0
             info = {
@@ -657,7 +656,7 @@ class SawyerEnvV2Display(
                 self.obj_init_pos = self.get_body_com('obj')
         elif now_task == TASKS.BIN_PLACE:
             if self.task_step == 0:
-                self._target_pos = self.get_body_com('bin')
+                self._target_pos = self.get_body_com('bin') + np.array([0., 0., 0.008])
                 self.succeed = False
                 self.quat = self.coffee_machine_quat
                 self.obj_init_pos = self.get_body_com('obj')
