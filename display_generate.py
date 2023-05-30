@@ -374,7 +374,7 @@ if __name__ == "__main__":
     # data_demo(task_list=None, seed=12001, total_task_num=10, debug=True)
     # for seed in range(0, 10):
     #     data_demo(task_list=None, seed=seed, total_task_num=50, debug=False)
-    generate_data_main(random_task=True, begin_seed=2, end_seed=2+1)
+    generate_data_main(random_task=True, begin_seed=2, end_seed=20+1)
     # task_name = "display"
     # task_list = ['drawer-open', 'drawer-place', 'drawer-close', 'reset', 
     #                 'drawer-open', 'drawer-pick', 'coffee-push', 'coffee-button',
