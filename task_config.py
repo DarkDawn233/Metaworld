@@ -71,6 +71,7 @@ TASK_DICK = {
      'drawer-pick-display':         {'env': ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE["drawer-pick-v2-display-goal-observable"]      ,'policy': SawyerDrawerPickV2DisplayPolicy},
 
      'display':                     {'env': ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE["v2-display-goal-observable"]                  ,'policy': SawyerV2DisplayPolicy},
+     'display-3d3m':                {'env': ALL_DISPLAY_ENVIRONMENTS_GOAL_OBSERVABLE["v2-display-3d3m-goal-observable"]             ,'policy': SawyerV2DisplayPolicy},
      
 }
 

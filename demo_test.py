@@ -140,7 +140,7 @@ class Demo(object):
 
 
 if __name__ == "__main__":
-    task_name = 'display'
+    task_name = 'display-3d3m'
     seed = 0
     demo = Demo(task_name=task_name, seed=seed, fix_reset=True, save_gif=True)
     # done = False
@@ -150,11 +150,11 @@ if __name__ == "__main__":
     #     2000: 'reset',
     #     2050: 'stop'
     # }
-    test_task_dict = {
-        15: ['drawer-open', 'desk-pick', 'drawer-place', 'drawer-close', 'drawer-open', 'drawer-pick', 'bin-place'],
-        1600: 'reset',
-        1601: 'stop'
-    }
+    # test_task_dict = {
+    #     15: ['drawer-open', 'desk-pick', 'drawer-place', 'drawer-close', 'drawer-open', 'drawer-pick', 'bin-place'],
+    #     1600: 'reset',
+    #     1601: 'stop'
+    # }
     # test_task_dict = {
     #     400: ['drawer-open', 'desk-pick', 'drawer-place', 'drawer-pick', 'desk-place'],
     #     1200: 'reset',
@@ -165,10 +165,10 @@ if __name__ == "__main__":
     #     500: 'reset',
     #     501: 'stop'
     # }
-    # test_task_dict = {
-    #     10: 'stop',
-        
-    # }
+    test_task_dict = {
+        10: 'stop',
+    }
+    
     step = 0
     while True:
         """
@@ -202,6 +202,7 @@ if __name__ == "__main__":
             if instruction == 'reset':
                 demo.reset()
             elif instruction == 'stop':
+                demo.gif_save('stop')
                 break
             else:
                 raise ValueError(f"Error instruction: {instruction}")

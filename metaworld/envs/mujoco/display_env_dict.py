@@ -4,6 +4,8 @@ import numpy as np
 
 from metaworld.envs.mujoco.sawyer_xyz.display import (
     SawyerEnvV2Display,
+    SawyerEnvV2Display3D3M,
+
     SawyerCoffeeButtonEnvV2Display,
     SawyerCoffeePullEnvV2Display,
     SawyerCoffeePushEnvV2Display,
@@ -21,6 +23,7 @@ from metaworld.envs.mujoco.sawyer_xyz.display import (
 
 ALL_DISPLAY_ENVIRONMENTS = OrderedDict((
     ('v2-display', SawyerEnvV2Display),
+    ('v2-display-3d3m', SawyerEnvV2Display3D3M),
 
     ('coffee-button-v2-display', SawyerCoffeeButtonEnvV2Display),
     ('coffee-pull-v2-display', SawyerCoffeePullEnvV2Display),

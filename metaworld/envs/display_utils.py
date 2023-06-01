@@ -10,14 +10,29 @@ import warnings
 
 logger = get_logger(__name__)
 
+# COLOR_LIST = [
+#     "#F27970",
+#     "#BB9727",
+#     "#54B345",
+#     "#32B897",
+#     "#05B9E2",
+#     "#8983BF",
+#     "#C76DA2",
+# ]
 COLOR_LIST = [
-    "#F27970",
-    "#BB9727",
-    "#54B345",
-    "#32B897",
-    "#05B9E2",
-    "#8983BF",
-    "#C76DA2",
+    # 标准颜色
+    "#000000",
+    "#FFFFFF",
+    "#FF0000",
+    "#00FF00",
+    "#0000FF",
+    "#FFFF00",
+    "#00FFFF",
+    "#FF00FF",
+    "#808080",
+    "#FFA500",
+    "#800080",
+    "#A52A2A"
 ]
 RGB_COLOR_LIST = [matplotlib.colors.to_rgb(color) for color in COLOR_LIST]
 

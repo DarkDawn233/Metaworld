@@ -1,4 +1,5 @@
 from metaworld.envs.mujoco.sawyer_xyz.display.display import SawyerEnvV2Display
+from metaworld.envs.mujoco.sawyer_xyz.display.display_3d3m import SawyerEnvV2Display3D3M
 
 from metaworld.envs.mujoco.sawyer_xyz.display.sawyer_coffee_button_display import SawyerCoffeeButtonEnvV2Display
 from metaworld.envs.mujoco.sawyer_xyz.display.sawyer_coffee_pull_display import SawyerCoffeePullEnvV2Display
