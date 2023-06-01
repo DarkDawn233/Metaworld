@@ -112,7 +112,8 @@ class SawyerEnvV2Display3D3M(
         self._cup_machine_offset = 0.28
 
         self.random_generate_task = False
-        self._states = {'cup': None, 'drawer': None}
+        self._states = {'cup': {idx: None for idx in range(3)},
+                        'drawer':{idx: None for idx in range(3)}}
 
         self.fix_reset_flag = False # 固定重置环境
 
@@ -242,9 +243,10 @@ class SawyerEnvV2Display3D3M(
         self.obj_init_pos = self._get_pos_objects()
         self.prev_obs = self._get_curr_obs_combined_no_goal()
 
-        self._states['drawer'] = STATES.DRAWER_STATE_CLOSED
-        self._states['cup'] = STATES.CUP_STATE_DESK
-        check_if_state_valid(self.states)
+        for idx in self._states['drawer'].keys():
+            self._states['drawer'][idx] = STATES.DRAWER_STATE_CLOSED
+        for idx in self._states['cup'].keys():
+            self._states['cup'][idx] = STATES.CUP_STATE_DESK
         logger.info(f"self.obj_init_pos: {self.obj_init_pos}")
         return self._get_obs()
     
@@ -359,7 +361,7 @@ class SawyerEnvV2Display3D3M(
 
             if now_task not in ["drawer-close", "drawer-open"] or self.target_drawer_id != i:
                 # TODO 判断当前对应drawer_i的状态
-                if self.states["drawer"] == STATES.DRAWER_STATE_CLOSED:
+                if self.target_states["drawer"] == STATES.DRAWER_STATE_CLOSED:
                     qpos[addr_drawer] = 0
                 else:
                     qpos[addr_drawer] = -0.16
@@ -398,11 +400,10 @@ class SawyerEnvV2Display3D3M(
 
         if self.task_step == 0:
             # TODO 分解当前任务 -> target_mug_id / target_drawer_id
-            # TODO check_task_cond 与当前 target_mug_id / target_drawer_id 相关
-            if not check_task_cond(now_task, self.states):
+            if not check_task_cond(now_task, self.target_states):
                 warnings.warn(f'Task {now_task} is invalid for state: '
                               f'{self.states}.')
-                missing_task = find_missing_task(now_task, self.states)
+                missing_task = find_missing_task(now_task, self.target_states)
                 if missing_task is None:
                     warnings.warn(f'Cannot find the missing task, stopped.')
                     self.task_step = 0
@@ -499,10 +500,10 @@ class SawyerEnvV2Display3D3M(
             logger.info(f"{done_task} task done")
             self.task_step = 0
             self.after_success_cnt = 0
-            logger.info(f'Finished Task: {done_task}')
-            logger.info(f'Old States: {self.states}')
-            self._states = change_state(done_task, self.states)
-            logger.info(f'New States: {self.states}')
+            old_states = self.states
+            self.target_states = change_state(done_task, self.target_states)
+            new_states = self.states
+            logger.info(f'TASK({done_task}): {old_states} -> {new_states}')
             if self.random_generate_task:
                 self.random_generate_next_task()
 
@@ -537,7 +538,7 @@ class SawyerEnvV2Display3D3M(
         valid_tasks = list()
         valid_probs = list()
         for next_task in total_tasks:
-            if check_task_cond(next_task, self.states):
+            if check_task_cond(next_task, self.target_states):
                 valid_tasks.append(next_task)
                 valid_probs.append(TASK_RANDOM_PROBABILITY[next_task])
         self.task_list = random.choices(valid_tasks, weights=valid_probs, k=1)
@@ -549,3 +550,13 @@ class SawyerEnvV2Display3D3M(
 
     def read_states(self) -> str:
         return f'当前各个物体状态如下：{self.states}'.replace("'", '').replace('"', '')
+
+    @property
+    def target_states(self) -> dict[str, str]:
+        return dict(cup=self.states['cup'][self.target_mug_id],
+                    drawer=self.states['drawer'][self.target_drawer_id])
+
+    @target_states.setter
+    def target_states(self, states: dict[str, str]):
+        self._states['cup'][self.target_mug_id] = states['cup']
+        self._states['drawer'][self.target_drawer_id] = states['drawer']
