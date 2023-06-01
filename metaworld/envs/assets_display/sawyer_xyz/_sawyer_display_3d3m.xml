@@ -34,7 +34,7 @@
           </body>
         </body>
 
-        <body name="drawer1" pos="0 0.85 0">
+        <body name="drawer1" pos="-0.12 0.85 0">
           <body childclass="drawer_base">
             <body name="drawercase_link1" pos="0 0 0.084">
                 <geom name="drawercase_tmp1" material="drawer_beige" mesh="drawercase"/>
@@ -86,6 +86,10 @@
                 </body>
             </body>
           </body>
+        </body>
+
+        <body name="coffee_machine" pos="0.12 0.85 0">
+          <include file="../objects/assets/coffeemachine.xml"/>
         </body>
         
         <body name="obj0" pos="-0.4 0.3 0.1">

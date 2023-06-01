@@ -40,6 +40,9 @@ from metaworld.envs.display_utils import (random_grid_pos,
 
 
 NAME2ENVS: Dict[str, SawyerXYZEnvDisplay] = {
+    TASKS.COFFEE_BUTTON: SawyerCoffeeButtonEnvV2Display,
+    TASKS.COFFEE_PULL: SawyerCoffeePullEnvV2Display,
+    TASKS.COFFEE_PUSH: SawyerCoffeePushEnvV2Display,
     TASKS.DRAWER_CLOSE: SawyerDrawerCloseEnvV2Display,
     TASKS.DRAWER_OPEN: SawyerDrawerOpenEnvV2Display,
     TASKS.DRAWER_PICK: SawyerDrawerPickEnvV2Display,
@@ -54,6 +57,9 @@ logger = get_logger(__name__)
 
 
 class SawyerEnvV2Display3D3M(
+            SawyerCoffeeButtonEnvV2Display,
+            SawyerCoffeePullEnvV2Display,
+            SawyerCoffeePushEnvV2Display,
             SawyerDrawerCloseEnvV2Display,
             SawyerDrawerOpenEnvV2Display,
             SawyerDrawerPickEnvV2Display,
@@ -120,18 +126,31 @@ class SawyerEnvV2Display3D3M(
         return full_display_path_for('sawyer_xyz/_sawyer_display_3d3m.xml')
     
     def _random_init_drawer_pos(self):
+        x_list = [-0.4, -0.12, 0.4]
         self.drawer_init_pos = []
         for i in range(3):
-            pos = [i*0.4 - 0.4, 0.85, 0]
+            pos = [x_list[i], 0.85, 0]
             pos = np.array(pos)
             self.sim.model.body_pos[
                 self.sim.model.body_name2id('drawer'+str(i))
             ] = pos
             self.drawer_init_pos.append(pos)
     
+    def _random_coffee_machine_init_pos(self):
+        pos = [0.12, 0.85, 0]
+        pos = np.array(pos)
+        self.sim.model.body_pos[
+            self.sim.model.body_name2id('coffee_machine')
+        ] = pos
+        self.coffee_machine_init_pos = pos
+    
     def _random_init_mug_pos(self):
         forbid_list = [((drawer_pos[0]-0.25, drawer_pos[0]+0.25),
                         (drawer_pos[1]-0.4, drawer_pos[1]+0.2)) for drawer_pos in self.drawer_init_pos]
+        forbid_list.append(
+            ((self.coffee_machine_init_pos[0]-0.25, self.coffee_machine_init_pos[0]+0.25),
+             (self.coffee_machine_init_pos[1]-0.3, self.coffee_machine_init_pos[1]+0.2))
+        )
         qpos = self.data.qpos.flat.copy()
         qvel = self.data.qvel.flat.copy()
         self.mug_init_pos = []
@@ -173,6 +192,8 @@ class SawyerEnvV2Display3D3M(
                 model_name = [name.replace('drawer', 'drawercase_tmp'), name.replace('drawer', 'drawer_tmp')]
             elif "mug" in name:
                 model_name = [name, name.replace('mug', 'handle')]
+            elif name == 'coffee_machine_body':
+                model_name = ['coffee_machine_body1', 'coffee_machine_body2']
             else:
                 model_name = [name]
 
@@ -182,7 +203,7 @@ class SawyerEnvV2Display3D3M(
                     self.sim.model.geom_name2id(name)] = rgba
 
         # model_name_list = ['drawer', 'coffee_machine_body', 'shelf', 'mug']
-        model_name_list = ['drawer0', 'drawer1', 'drawer2'] + ['mug0', 'mug1', 'mug2']
+        model_name_list = ['drawer0', 'drawer1', 'drawer2'] + ['coffee_machine_body'] + ['mug0', 'mug1', 'mug2']
         rgb_list = random.sample(RGB_COLOR_LIST, len(model_name_list))
         for model_name, rgb in zip(model_name_list, rgb_list):
             set_model_rgba(model_name, rgb)
@@ -209,6 +230,7 @@ class SawyerEnvV2Display3D3M(
         # self._random_bin_init(self.fix_reset_flag)
         # self._random_init_mug(self.fix_reset_flag)
         self._random_init_drawer_pos()
+        self._random_coffee_machine_init_pos()
         self._random_init_mug_pos()
 
         self._random_init_color()
@@ -302,6 +324,14 @@ class SawyerEnvV2Display3D3M(
         self._check_task_list(task_list)
         self.task_list += task_list
     
+    def _reset_button_offsets(self, pos=None):
+        pos = 0 if pos is None else pos
+        qpos = self.data.qpos.flat.copy()
+        qvel = self.data.qvel.flat.copy()
+        addr = self.model.get_joint_qpos_addr('goal_slidey')
+        qpos[addr] = pos
+        self.set_state(qpos, qvel)
+    
     def _judge_grab(self, id):
         pos_mug = self.get_body_com('obj'+id)
         for j in range(3):
@@ -391,7 +421,28 @@ class SawyerEnvV2Display3D3M(
             self._reset_button_offsets()
             logger.info(f'TaskList: {self.task_list}')
 
-        if now_task == TASKS.DRAWER_CLOSE:
+        if now_task == TASKS.COFFEE_BUTTON:
+            if self.task_step == 0:
+                self.max_dist = 0.09
+                pos_button = self.coffee_machine_init_pos + np.array([.0, -self._cup_machine_offset, .3])
+                self._target_pos = pos_button + np.array([.0, self.max_dist, .0])
+                self.quat = np.array([1., 0., 0., 0.])
+                self.succeed = False
+        elif now_task == TASKS.COFFEE_PULL:
+            if self.task_step == 0:
+                self.max_dist = 0.03
+                # assert hasattr(self, 'mug_init_pos')
+                self._target_pos = self._get_mug_pick_pos(self.target_mug_id)
+                self.quat = np.array([1., 0., 0., 0.])
+                self.succeed = False
+        elif now_task == TASKS.COFFEE_PUSH:
+            if self.task_step == 0:
+                self.max_dist = 0.03
+                pos_goal = self.coffee_machine_init_pos + np.array([.0, -self._cup_machine_offset, .0])
+                self._target_pos = pos_goal
+                self.quat = np.array([1., 0., 0., 0.])
+                self.succeed = False
+        elif now_task == TASKS.DRAWER_CLOSE:
             if self.task_step == 0:
                 self._target_pos = self.get_body_com('drawer'+str(self.target_drawer_id)) + np.array([.0, -.16, .09])
                 self.obj_init_pos = self._get_pos_objects()
@@ -463,6 +514,8 @@ class SawyerEnvV2Display3D3M(
             y_range = [0.4, 0.9]
             forbid_list = [((drawer_pos[0]-0.25, drawer_pos[0]+0.25),
                         (drawer_pos[1]-0.4, drawer_pos[1]+0.2)) for drawer_pos in self.drawer_init_pos] + \
+                        [((self.coffee_machine_init_pos[0]-0.25, self.coffee_machine_init_pos[0]+0.25),
+                          (self.coffee_machine_init_pos[1]-0.3, self.coffee_machine_init_pos[1]+0.2))]
             for i in range(3):
                 mug_pos = self.get_body_com('obj'+str(i))
                 forbid_list.append(((mug_pos[0]-0.1, mug_pos[0]+0.1),
