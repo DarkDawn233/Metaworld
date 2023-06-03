@@ -388,14 +388,14 @@ class SawyerEnvV2Display3D3M(
             # mug_i
             if not self._judge_grab(id):
                 addr_mug = self.model.get_joint_qpos_addr('mug_obj'+id)
-                if "place" in self.now_task:
+                if "place" in self.now_task and self.target_mug_id == i:
                     qpos[addr_mug[0]+0: addr_mug[0]+3] = self._target_pos
                 qpos[addr_mug[0]+3: addr_mug[0]+7] = np.array(np.array([1., 0., 0., 0.]))
 
             addr_drawer = self.model.get_joint_qpos_addr('drawer_goal_slidey'+id)
 
             if self.now_task not in ["drawer-close", "drawer-open"] or self.target_drawer_id != i:
-                if self.target_states["drawer"] == STATES.DRAWER_STATE_CLOSED:
+                if self._states[STATE_KEYS.DRAWER][i] == STATES.DRAWER_STATE_CLOSED:
                     qpos[addr_drawer] = 0
                 else:
                     qpos[addr_drawer] = -0.16
@@ -658,11 +658,11 @@ class SawyerEnvV2Display3D3M(
         self.now_task = task_name
     
     def _get_target_drawer(self, item_pro):
-        if item_pro == "left":
+        if item_pro == "right":
             self.target_drawer_id = 0
         elif item_pro == "mid":
             self.target_drawer_id = 1
-        elif item_pro == "right":
+        elif item_pro == "left":
             self.target_drawer_id = 2
         else:
             color = item_pro
@@ -678,11 +678,11 @@ class SawyerEnvV2Display3D3M(
         for i in range(3):
             mug_list.append((self.get_body_com('obj'+str(i))[0], i))
         mug_list.sort(key=lambda x:x[0])
-        if item_pro == "left":
+        if item_pro == "right":
             self.target_mug_id = mug_list[0][1]
         elif item_pro == "mid":
             self.target_mug_id = mug_list[1][1]
-        elif item_pro == "right":
+        elif item_pro == "left":
             self.target_mug_id = mug_list[2][1]
         else:
             color = item_pro

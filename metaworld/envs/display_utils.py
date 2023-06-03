@@ -331,6 +331,6 @@ def safe_move(from_xyz, to_xyz, p):
     response = p * error
 
     if np.any(np.absolute(response) > 1.):
-        logger.warn('Constant(s) may be too high. Environments clip response to [-1, 1]')
+        warnings.warn('Constant(s) may be too high. Environments clip response to [-1, 1]')
 
     return response

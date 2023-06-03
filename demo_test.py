@@ -148,10 +148,14 @@ if __name__ == "__main__":
     #          '()coffee-push', '()coffee-button', '()coffee-pull', '(green)drawer-place'],
     #     1000: 'stop',
     # }
+    # test_task_dict = {
+    #     10: ['(green)drawer-open', '(blue)desk-pick', '(green)drawer-place',
+    #          '(white)desk-pick', '(green)drawer-place',],
+    #     2000: 'stop',
+    # }
     test_task_dict = {
-        10: ['(green)drawer-open', '(blue)desk-pick', '(green)drawer-place',
-             '(white)desk-pick', '(green)drawer-place',],
-        2000: 'stop',
+        10: ['(left)drawer-open'],
+        200: 'stop'
     }
     
     step = 0
