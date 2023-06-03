@@ -21,20 +21,20 @@ logger = get_logger(__name__)
 # ]
 COLOR_LIST = [
     # 标准颜色
-    "#000000",
-    "#FFFFFF",
-    "#FF0000",
-    "#00FF00",
-    "#0000FF",
-    "#FFFF00",
-    "#00FFFF",
-    "#FF00FF",
-    "#808080",
-    "#FFA500",
-    "#800080",
-    "#A52A2A"
+    ("black",   "#000000"),
+    ("white",   "#FFFFFF"),
+    ("red",     "#FF0000"),
+    ("green",   "#00FF00"),
+    ("blue",    "#0000FF"),
+    ("yellow",  "#FFFF00"),
+    ("cyan",    "#00FFFF"),
+    ("carmine", "#FF00FF"),
+    ("gray",    "#808080"),
+    ("orange",  "#FFA500"),
+    ("purple",  "#800080"),
+    ("brown",   "#A52A2A"),
 ]
-RGB_COLOR_LIST = [matplotlib.colors.to_rgb(color) for color in COLOR_LIST]
+RGB_COLOR_LIST = [(color[0], matplotlib.colors.to_rgb(color[1])) for color in COLOR_LIST]
 
 QUAT_LIST = [
     [1., 0., 0., 0.],                               # 正常状态

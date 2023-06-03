@@ -46,6 +46,8 @@ class SawyerDrawerOpenEnvV2Display(SawyerXYZEnvDisplay):
         self.maxDist = 0.15
         self.target_reward = 1000 * self.maxDist + 1000 * 2
 
+        self.drawer_link_name = 'drawer_link'
+
     @property
     def model_name(self):
         return full_display_path_for('sawyer_xyz/sawyer_drawer.xml')
@@ -252,7 +254,7 @@ class SawyerDrawerOpenEnvV2Display(SawyerXYZEnvDisplay):
         reward *= 5.0
 
         success = False
-        drawer_link_pos = self.get_body_com('drawer_link')
+        drawer_link_pos = self.get_body_com(self.drawer_link_name)
         if self.quat_index == 0:
             success = drawer_link_pos[1] <= self._handle_pos_init[1]
         elif self.quat_index == 1:

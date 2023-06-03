@@ -107,6 +107,7 @@ class SawyerEnvV2Display3D3M(
         self.target_reward = 1000 * self.maxDist + 1000 * 2
 
         self.task_list = []
+        self.now_task = ""
         self.task_step = 0
         self.task_done = True
         self._cup_machine_offset = 0.28
@@ -122,6 +123,8 @@ class SawyerEnvV2Display3D3M(
         self.target_mug_id = 0
         self.target_drawer_id = 0
 
+        self.color2item_dict = {}
+
     @property
     def model_name(self):
         return full_display_path_for('sawyer_xyz/_sawyer_display_3d3m.xml')
@@ -136,6 +139,11 @@ class SawyerEnvV2Display3D3M(
                 self.sim.model.body_name2id('drawer'+str(i))
             ] = pos
             self.drawer_init_pos.append(pos)
+
+            quat = np.array([1., 0., 0., 0.])
+            self.sim.model.body_quat[
+                self.sim.model.body_name2id('drawer'+str(i))
+            ] = quat
     
     def _random_coffee_machine_init_pos(self):
         pos = [0.12, 0.85, 0]
@@ -144,6 +152,12 @@ class SawyerEnvV2Display3D3M(
             self.sim.model.body_name2id('coffee_machine')
         ] = pos
         self.coffee_machine_init_pos = pos
+
+        quat = np.array([1., 0., 0., 0.])
+        self.sim.model.body_quat[
+            self.sim.model.body_name2id('coffee_machine')
+        ] = quat
+
     
     def _random_init_mug_pos(self):
         forbid_list = [((drawer_pos[0]-0.25, drawer_pos[0]+0.25),
@@ -206,8 +220,10 @@ class SawyerEnvV2Display3D3M(
         # model_name_list = ['drawer', 'coffee_machine_body', 'shelf', 'mug']
         model_name_list = ['drawer0', 'drawer1', 'drawer2'] + ['coffee_machine_body'] + ['mug0', 'mug1', 'mug2']
         rgb_list = random.sample(RGB_COLOR_LIST, len(model_name_list))
+        self.color2item_dict = {}
         for model_name, rgb in zip(model_name_list, rgb_list):
-            set_model_rgba(model_name, rgb)
+            set_model_rgba(model_name, rgb[1])
+            self.color2item_dict[rgb[0]] = model_name
 
     def reset_model(self):
         """
@@ -216,6 +232,7 @@ class SawyerEnvV2Display3D3M(
         """
 
         self.task_list = []
+        self.now_task = ""
         self.task_step = 0
         self.after_success_cnt = 0
         self.task_done = True
@@ -254,66 +271,81 @@ class SawyerEnvV2Display3D3M(
         self.fix_reset_flag = flag
 
     def _get_pos_objects(self):
-        if not hasattr(self, 'task_list') or len(self.task_list) == 0 or self.task_list[0] is None:
+        if not hasattr(self, 'task_list') or len(self.task_list) == 0 or self.now_task == "":
+        # if self.now_task == "":
             return np.zeros(3)
-        now_task = self.task_list[0]
-        if now_task == TASKS.DRAWER_CLOSE:
+        # now_task = self.task_list[0]
+        if self.now_task == TASKS.COFFEE_PULL:
+            results = self.get_body_com('obj'+str(self.target_mug_id))
+        elif self.now_task == TASKS.COFFEE_PUSH:
+            results = self.get_body_com('obj'+str(self.target_mug_id))
+        elif self.now_task == TASKS.DRAWER_CLOSE:
             results = self.get_body_com('drawer_link'+str(self.target_drawer_id)) + np.array([.0, -.16, .05])
-        elif now_task == TASKS.DRAWER_OPEN:
+        elif self.now_task == TASKS.DRAWER_OPEN:
             results = self.get_body_com('drawer_link'+str(self.target_drawer_id)) + np.array([.0, -.16, .05])
-        elif now_task == TASKS.DRAWER_PICK:
+        elif self.now_task == TASKS.DRAWER_PICK:
             results = np.hstack((
                 self.get_body_com('obj'+str(self.target_mug_id)),
                 self.get_body_com('drawer_link'+str(self.target_drawer_id))
             ))
-        elif now_task == TASKS.DRAWER_PLACE:
+        elif self.now_task == TASKS.DRAWER_PLACE:
             results = np.hstack((
                 self.get_body_com('obj'+str(self.target_mug_id)),
                 self.get_body_com('drawer_link'+str(self.target_drawer_id))
             ))
-        elif now_task == TASKS.DESK_PICK:
+        elif self.now_task == TASKS.DESK_PICK:
             results = self.get_body_com('obj'+str(self.target_mug_id))
-        elif now_task == TASKS.DESK_PLACE:
+        elif self.now_task == TASKS.DESK_PLACE:
             results = self.get_body_com('obj'+str(self.target_mug_id))
-        elif now_task in NAME2ENVS.keys():
-            results = NAME2ENVS[now_task]._get_pos_objects(self)
+        elif self.now_task in NAME2ENVS.keys():
+            results = NAME2ENVS[self.now_task]._get_pos_objects(self)
         else:
             raise NotImplementedError()
         return results
 
     def _get_quat_objects(self):
-        if not hasattr(self, 'task_list') or len(self.task_list) == 0 or self.task_list[0] is None:
+        # if not hasattr(self, 'task_list') or len(self.task_list) == 0 or self.task_list[0] is None:
+        if not hasattr(self, 'task_list') or len(self.task_list) == 0 or self.now_task == "":
+        # if self.now_task == "":
             return np.zeros(4)
-        now_task = self.task_list[0]
-        if now_task == TASKS.DRAWER_CLOSE:
+        # now_task = self.task_list[0]
+        if self.now_task == TASKS.COFFEE_BUTTON:
+            results = np.array([1., 0., 0., 0.])
+        elif self.now_task == TASKS.COFFEE_PULL:
+            results = self.get_body_quat('obj'+str(self.target_mug_id))
+        elif self.now_task == TASKS.COFFEE_PUSH:
+            results = self.get_body_quat('obj'+str(self.target_mug_id))
+        elif self.now_task == TASKS.DRAWER_CLOSE:
             results = self.get_body_quat('drawer_link'+str(self.target_drawer_id))
-        elif now_task == TASKS.DRAWER_OPEN:
+        elif self.now_task == TASKS.DRAWER_OPEN:
             results = self.get_body_quat('drawer_link'+str(self.target_drawer_id))
-        elif now_task == TASKS.DRAWER_PICK:
+        elif self.now_task == TASKS.DRAWER_PICK:
             results = np.hstack((
                 self.get_body_quat('mug'+str(self.target_mug_id)),
                 self.get_body_quat('drawer_link'+str(self.target_drawer_id))
             ))
-        elif now_task == TASKS.DRAWER_PLACE:
+        elif self.now_task == TASKS.DRAWER_PLACE:
             results = np.hstack((
                 self.get_body_quat('mug'+str(self.target_mug_id)),
                 self.get_body_quat('drawer_link'+str(self.target_drawer_id))
             ))
-        elif now_task == TASKS.DESK_PICK:
+        elif self.now_task == TASKS.DESK_PICK:
             results = self.get_body_quat('obj'+str(self.target_mug_id))
-        elif now_task == TASKS.DESK_PLACE:
+        elif self.now_task == TASKS.DESK_PLACE:
             results = self.get_body_quat('obj'+str(self.target_mug_id))
-        elif now_task in NAME2ENVS.keys():
-            results = NAME2ENVS[now_task]._get_pos_objects(self)
+        elif self.now_task in NAME2ENVS.keys():
+            results = NAME2ENVS[self.now_task]._get_pos_objects(self)
         else:
             raise NotImplementedError()
         return results
     
     def _check_task_list(self, task_list):
-
+        """
+        要求所有任务名称包含括号 "()"
+        """
         # TODO  区分 原task_list 和 解析后 task list
         for task in task_list:
-            if task not in self.TASK_LIST:
+            if task.split(")")[-1] not in self.TASK_LIST:
                 raise ValueError(f"Task name error: no task named {task}")
         
     def reset_task_list(self, task_list):
@@ -346,35 +378,43 @@ class SawyerEnvV2Display3D3M(
         qpos = self.data.qpos.flat.copy()
         qvel = self.data.qvel.flat.copy()
 
-        now_task = "" if len(self.task_list) == 0 else self.task_list[0]
+        # now_task = "" if len(self.task_list) == 0 else self.task_list[0]
         for i in range(3):
             id = str(i)
             
             # mug_i
             if not self._judge_grab(id):
                 addr_mug = self.model.get_joint_qpos_addr('mug_obj'+id)
-                if "place" in now_task:
+                if "place" in self.now_task:
                     qpos[addr_mug[0]+0: addr_mug[0]+3] = self._target_pos
                 qpos[addr_mug[0]+3: addr_mug[0]+7] = np.array(np.array([1., 0., 0., 0.]))
 
             addr_drawer = self.model.get_joint_qpos_addr('drawer_goal_slidey'+id)
 
-            if now_task not in ["drawer-close", "drawer-open"] or self.target_drawer_id != i:
-                # TODO 判断当前对应drawer_i的状态
+            if self.now_task not in ["drawer-close", "drawer-open"] or self.target_drawer_id != i:
                 if self.target_states["drawer"] == STATES.DRAWER_STATE_CLOSED:
                     qpos[addr_drawer] = 0
                 else:
                     qpos[addr_drawer] = -0.16
-            elif now_task == "drawer-close" and success and self.target_drawer_id == i:
+            elif self.now_task == "drawer-close" and success and self.target_drawer_id == i:
                 qpos[addr_drawer] = 0
-            elif now_task == "drawer-open" and success and self.target_drawer_id == i:
+            elif self.now_task == "drawer-open" and success and self.target_drawer_id == i:
                 qpos[addr_drawer] = -0.16
 
         self.set_state(qpos, qvel)
     
     @_assert_task_is_set
+    def step(self, action):
+        if self.task_step == 0 and len(self.task_list) > 0:
+            # 分解当前任务 -> target_mug_id / target_drawer_id
+            self._task_map()
+        return super(SawyerEnvV2Display3D3M, self).step(action)
+
+
+    @_assert_task_is_set
     def evaluate_state(self, obs, action):
         if len(self.task_list) == 0:
+            self.now_task = ""
             self.task_step = 0
             info = {
                 'success': float(False),
@@ -384,26 +424,27 @@ class SawyerEnvV2Display3D3M(
             self._reset_state(info['success'])
             return 0., info
 
-        now_task = self.task_list[0]
-        if now_task == None:
-            info = {
-                'success': float(False),
-                'task_name': None,
-                'task_step': self.task_step,
-            }
-            self.task_step += 1
-            if self.task_step >= self.rest_step:
-                self.task_list.pop(0)
-                self.task_step = 0
-            self._reset_state(info['success'])
-            return 0., info
+        # now_task = self.task_list[0]
+        # if now_task == None:
+        #     info = {
+        #         'success': float(False),
+        #         'task_name': None,
+        #         'task_step': self.task_step,
+        #     }
+        #     self.task_step += 1
+        #     if self.task_step >= self.rest_step:
+        #         self.task_list.pop(0)
+        #         self.task_step = 0
+        #     self._reset_state(info['success'])
+        #     return 0., info
 
         if self.task_step == 0:
-            # TODO 分解当前任务 -> target_mug_id / target_drawer_id
-            if not check_task_cond(now_task, self.target_states):
-                warnings.warn(f'Task {now_task} is invalid for state: '
+            # TODO：增加一些非法判断，例如抽屉里不能有两个杯子等
+            if not check_task_cond(self.now_task, self.target_states):
+                warnings.warn(f'Task {self.now_task} is invalid for state: '
                               f'{self.states}.')
-                missing_task = find_missing_task(now_task, self.target_states)
+                # TODO 下一步工作：如何补全miss task
+                missing_task = find_missing_task(self.now_task, self.target_states)
                 if missing_task is None:
                     warnings.warn(f'Cannot find the missing task, stopped.')
                     self.task_step = 0
@@ -418,62 +459,64 @@ class SawyerEnvV2Display3D3M(
                     warnings.warn(f'Find a potential missing task '
                                   f'{missing_task}, execute it first.')
                     self.task_list.insert(0, missing_task)
-                    now_task = missing_task
+                    self.now_task = missing_task
             self._reset_button_offsets()
             logger.info(f'TaskList: {self.task_list}')
 
-        if now_task == TASKS.COFFEE_BUTTON:
+        if self.now_task == TASKS.COFFEE_BUTTON:
             if self.task_step == 0:
                 self.max_dist = 0.09
                 pos_button = self.coffee_machine_init_pos + np.array([.0, -self._cup_machine_offset, .3])
                 self._target_pos = pos_button + np.array([.0, self.max_dist, .0])
                 self.quat = np.array([1., 0., 0., 0.])
                 self.succeed = False
-        elif now_task == TASKS.COFFEE_PULL:
+        elif self.now_task == TASKS.COFFEE_PULL:
             if self.task_step == 0:
                 self.max_dist = 0.03
                 # assert hasattr(self, 'mug_init_pos')
                 self._target_pos = self._get_mug_pick_pos(self.target_mug_id)
                 self.quat = np.array([1., 0., 0., 0.])
                 self.succeed = False
-        elif now_task == TASKS.COFFEE_PUSH:
+        elif self.now_task == TASKS.COFFEE_PUSH:
             if self.task_step == 0:
                 self.max_dist = 0.03
                 pos_goal = self.coffee_machine_init_pos + np.array([.0, -self._cup_machine_offset, .0])
                 self._target_pos = pos_goal
                 self.quat = np.array([1., 0., 0., 0.])
                 self.succeed = False
-        elif now_task == TASKS.DRAWER_CLOSE:
+        elif self.now_task == TASKS.DRAWER_CLOSE:
             if self.task_step == 0:
                 self._target_pos = self.get_body_com('drawer'+str(self.target_drawer_id)) + np.array([.0, -.16, .09])
                 self.obj_init_pos = self._get_pos_objects()
-        elif now_task == TASKS.DRAWER_OPEN:
+        elif self.now_task == TASKS.DRAWER_OPEN:
             if self.task_step == 0:
                 self.maxDist = 0.16
                 self._target_pos = self.get_body_com('drawer'+str(self.target_drawer_id)) + np.array([.0, -.16 - self.maxDist, .09])
                 self._handle_pos_init = self._target_pos + np.array([.0, self.maxDist, .0])
-        elif now_task == TASKS.DRAWER_PICK:
+                self.quat_index = 0
+                self.drawer_link_name = 'drawer_link' + str(self.target_drawer_id)
+        elif self.now_task == TASKS.DRAWER_PICK:
             if self.task_step == 0:
                 self._target_pos = self.get_body_com('obj'+str(self.target_mug_id)) + np.array([.0, .0, .3])
                 self.obj_init_pos = self.get_body_com('obj'+str(self.target_mug_id))
-        elif now_task == TASKS.DRAWER_PLACE:
+        elif self.now_task == TASKS.DRAWER_PLACE:
             if self.task_step == 0:
                 self._target_pos = self.get_body_com('drawer_link'+str(self.target_drawer_id)) + np.array([-.01, -.01, -.09]) + np.array([.0, .0, .038])
                 self.obj_init_pos = self.get_body_com('obj'+str(self.target_mug_id))
-        elif now_task == TASKS.DESK_PICK:
+        elif self.now_task == TASKS.DESK_PICK:
             if self.task_step == 0:
                 self._target_pos = self._get_mug_pick_pos(self.target_mug_id)
                 self._target_pos[2] = 0.4
                 self.quat = np.array([1., 0., 0., 0.])
                 self.succeed = False
                 self.obj_init_pos = self.get_body_com('obj'+str(self.target_mug_id))
-        elif now_task == TASKS.DESK_PLACE:
+        elif self.now_task == TASKS.DESK_PLACE:
             if self.task_step == 0:
                 self._target_pos = self._random_init_point(self.target_mug_id)
                 self.quat = np.array([1., 0., 0., 0.])
                 self.succeed = False
                 self.obj_init_pos = self.get_body_com('obj'+str(self.target_mug_id))
-        elif now_task == TASKS.RESET_HAND:
+        elif self.now_task == TASKS.RESET_HAND:
             if self.task_step == 0:
                 self._target_pos = np.array([0.0, 0.4, 0.4])
                 self.succeed = False
@@ -481,9 +524,9 @@ class SawyerEnvV2Display3D3M(
         else:
             raise NotImplementedError()
 
-        reward, info = NAME2ENVS[now_task].evaluate_state(self, obs, action)
+        reward, info = NAME2ENVS[self.now_task].evaluate_state(self, obs, action)
 
-        info['task_name'] = now_task
+        info['task_name'] = self.now_task
 
         self.task_step += 1
         info['task_step'] = self.task_step
@@ -501,10 +544,12 @@ class SawyerEnvV2Display3D3M(
             self.task_step = 0
             self.after_success_cnt = 0
             old_states = self.states
+            # TODO 更改状态表示,输入可以有 done_task: '(green)drawer-open', self.now_task: 'drawer-open', self.target_drawer_id, self.target_mug_id
             self.target_states = change_state(done_task, self.target_states)
             new_states = self.states
             logger.info(f'TASK({done_task}): {old_states} -> {new_states}')
             if self.random_generate_task:
+                # TODO 下一步工作：如何随机生成任务
                 self.random_generate_next_task()
 
         return reward, info
@@ -560,3 +605,74 @@ class SawyerEnvV2Display3D3M(
     def target_states(self, states: dict[str, str]):
         self._states['cup'][self.target_mug_id] = states['cup']
         self._states['drawer'][self.target_drawer_id] = states['drawer']
+    
+    def _task_map(self):
+        """
+        支持的任务列表：
+        '()coffee-button'                   按咖啡机按钮      
+        '()coffee-pull'                     将咖啡机旁的杯子拿走【要求接完咖啡后必须拿走咖啡杯，若无要求则放桌上】
+        '()coffee-push'                     将手中的杯子放到咖啡机旁
+        '(color/pos_drawer)drawer-close'    将(color/pos_drawer)的抽屉关上
+        '(color/pos_drawer)drawer-open'     将(color/pos_drawer)的抽屉打开
+        '(color/pos_drawer)drawer-pick'     将(color/pos_drawer)的抽屉中的杯子取出
+        '(color/pos_drawer)drawer-place'    将手中的杯子放到(color/pos_drawer)的抽屉中
+        '(color/pos_mug)desk-pick'          将(color/pos_mug)的杯子从桌上拿起
+        '()desk-place'                      将手中的杯子放到桌面上
+        '()reset-hand'                      机械臂复位
+        支持的描述：
+        color: 物体颜色
+        pos:   方位描述(left, right, mid)
+        """
+        now_task = self.task_list[0]
+        target_item_pro, task_name = now_task.split(")")
+        target_item_pro = target_item_pro[1:]
+        if task_name in [TASKS.DRAWER_CLOSE, TASKS.DRAWER_OPEN, TASKS.DRAWER_PICK, TASKS.DRAWER_PLACE]:
+            self._get_target_drawer(target_item_pro)
+        if task_name == TASKS.DRAWER_PICK:
+            self._get_target_mug_from_drawer()
+        if task_name == TASKS.DESK_PICK:
+            self._get_target_mug(target_item_pro)
+        self.now_task = task_name
+    
+    def _get_target_drawer(self, item_pro):
+        if item_pro == "left":
+            self.target_drawer_id = 0
+        elif item_pro == "mid":
+            self.target_drawer_id = 1
+        elif item_pro == "right":
+            self.target_drawer_id = 2
+        else:
+            color = item_pro
+            if color not in self.color2item_dict:
+                raise ValueError(f"No item match color {color}")
+            item = self.color2item_dict[color]
+            if "drawer" not in item:
+                raise ValueError(f"Color {color} miss match drawer but {item}")
+            self.target_drawer_id = int(item[-1])
+    
+    def _get_target_mug(self, item_pro):
+        mug_list = []
+        for i in range(3):
+            mug_list.append((self.get_body_com('obj'+str(i))[0], i))
+        mug_list.sort(key=lambda x:x[0])
+        if item_pro == "left":
+            self.target_mug_id = mug_list[0][1]
+        elif item_pro == "mid":
+            self.target_mug_id = mug_list[1][1]
+        elif item_pro == "right":
+            self.target_mug_id = mug_list[2][1]
+        else:
+            color = item_pro
+            if color not in self.color2item_dict:
+                raise ValueError(f"No item match color {color}")
+            item = self.color2item_dict[color]
+            if "mug" not in item:
+                raise ValueError(f"Color {color} miss match mug but {item}")
+            self.target_mug_id = int(item[-1])
+    
+    def _get_target_mug_from_drawer(self):
+        # TODO: 适配对应抽屉中杯子的编号
+        pass
+
+
+        
