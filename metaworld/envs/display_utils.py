@@ -61,6 +61,14 @@ class Tasks:
 
 
 @dataclass(frozen=True)
+class StateKeys:
+    CUP = 'cup'
+    DRAWER = 'drawer'
+    CUP_IN_DRAWER = 'cup_in_drawer'
+    DRAWER_CONTAINS_CUP = 'drawer_contains_cup'
+
+
+@dataclass(frozen=True)
 class States:
     CUP_STATE_AIR = 'AIR'
     CUP_STATE_DRAWER = 'DRAWER'
@@ -68,26 +76,37 @@ class States:
     CUP_STATE_BIN = 'BIN'
     CUP_STATE_MACHINE = 'MACHINE'
     CUP_STATE_SHELF = 'SHELF'
+    CUP_OUTSIDE_DRAWER = None
     DRAWER_STATE_OPENED = 'OPENED'
     DRAWER_STATE_CLOSED = 'CLOSED'
+    DRAWER_IS_EMPTY = None
 
 
 TASKS = Tasks()
 STATES = States()
+STATE_KEYS = StateKeys()
 
 
 PRECONDITIONS = {
     TASKS.COFFEE_BUTTON: {'cup': lambda x: x == STATES.CUP_STATE_MACHINE},
     TASKS.COFFEE_PULL: {'cup': lambda x: x == STATES.CUP_STATE_MACHINE},
     TASKS.COFFEE_PUSH: {'cup': lambda x: x == STATES.CUP_STATE_AIR},
-    TASKS.DRAWER_CLOSE: {'cup': lambda x: x != STATES.CUP_STATE_AIR,
-                         'drawer': lambda x: x == STATES.DRAWER_STATE_OPENED},
-    TASKS.DRAWER_OPEN: {'cup': lambda x: x != STATES.CUP_STATE_AIR,
-                        'drawer': lambda x: x == STATES.DRAWER_STATE_CLOSED},
-    TASKS.DRAWER_PICK: {'cup': lambda x: x == STATES.CUP_STATE_DRAWER,
-                        'drawer': lambda x: x == STATES.DRAWER_STATE_OPENED},
-    TASKS.DRAWER_PLACE: {'cup': lambda x: x == STATES.CUP_STATE_AIR,
-                         'drawer': lambda x: x == STATES.DRAWER_STATE_OPENED},
+    TASKS.DRAWER_CLOSE: {
+        'cup': lambda x: x != STATES.CUP_STATE_AIR,
+        'drawer': lambda x: x == STATES.DRAWER_STATE_OPENED},
+    TASKS.DRAWER_OPEN: {
+        'cup': lambda x: x != STATES.CUP_STATE_AIR,
+        'drawer': lambda x: x == STATES.DRAWER_STATE_CLOSED},
+    TASKS.DRAWER_PICK: {
+        'cup': lambda x: x == STATES.CUP_STATE_DRAWER,
+        'drawer': lambda x: x == STATES.DRAWER_STATE_OPENED,
+        'cup_in_drawer': lambda x: x is not STATES.CUP_OUTSIDE_DRAWER,
+        'drawer_contains_cup': lambda x: x is not STATES.DRAWER_IS_EMPTY},
+    TASKS.DRAWER_PLACE: {
+        'cup': lambda x: x == STATES.CUP_STATE_AIR,
+        'drawer': lambda x: x == STATES.DRAWER_STATE_OPENED,
+        'cup_in_drawer': lambda x: x is STATES.CUP_OUTSIDE_DRAWER,
+        'drawer_contains_cup': lambda x: x is STATES.DRAWER_IS_EMPTY},
     TASKS.DESK_PICK: {'cup': lambda x: x == STATES.CUP_STATE_DESK},
     TASKS.DESK_PLACE: {'cup': lambda x: x == STATES.CUP_STATE_AIR},
     TASKS.BIN_PICK: {'cup': lambda x: x == STATES.CUP_STATE_BIN},
@@ -137,20 +156,39 @@ TASK_RANDOM_PROBABILITY = {
 
 
 def check_task_cond(task: str, states: dict[str, str]) -> bool:
+    states = deepcopy(states)
     obj2conds: dict[str, Callable] = PRECONDITIONS[task]
     success = True
     for obj, cond in obj2conds.items():
+        if obj not in states.keys():
+            # display.py does not contain state `drawer_contains_cup`
+            continue
         success: bool = success and cond(states[obj])
         if not success:
             break
     return success
 
 
-def change_state(task: str, states: dict[str, str]) -> dict[str, str]:
+def change_state(task: str,
+                 states: dict[str, str],
+                 target_cup_index: int = None,
+                 target_drawer_index: int = None) -> dict[str, str]:
     states = deepcopy(states)
     obj2state: dict[str, str] = POSTSTATES[task]
     for obj, new_state in obj2state.items():
         states[obj] = new_state
+
+    # Exceptions.
+    if task == TASKS.DRAWER_PLACE \
+            and STATE_KEYS.CUP_IN_DRAWER in states.keys() \
+            and STATE_KEYS.DRAWER_CONTAINS_CUP in states.keys():
+        states[STATE_KEYS.CUP_IN_DRAWER] = target_drawer_index
+        states[STATE_KEYS.DRAWER_CONTAINS_CUP] = target_cup_index
+    if task == TASKS.DRAWER_PICK \
+            and STATE_KEYS.CUP_IN_DRAWER in states.keys() \
+            and STATE_KEYS.DRAWER_CONTAINS_CUP in states.keys():
+        states[STATE_KEYS.CUP_IN_DRAWER] = None
+        states[STATE_KEYS.DRAWER_CONTAINS_CUP] = None
     return states
 
 
