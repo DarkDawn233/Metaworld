@@ -30,7 +30,7 @@ from metaworld.envs.mujoco.sawyer_xyz.display.sawyer_reset_display import Sawyer
 from metaworld.envs.display_utils import (random_grid_pos,
                                           check_task_cond,
                                           change_state,
-                                          check_if_state_valid,
+                                          parse_task,
                                           find_missing_task,
                                           TASKS,
                                           STATES,
@@ -348,7 +348,7 @@ class SawyerEnvV2Display3D3M(
         """
         # TODO  区分 原task_list 和 解析后 task list
         for task in task_list:
-            if task.split(")")[-1] not in self.TASK_LIST:
+            if parse_task(task) not in self.TASK_LIST:
                 raise ValueError(f"Task name error: no task named {task}")
         
     def reset_task_list(self, task_list):
@@ -443,12 +443,16 @@ class SawyerEnvV2Display3D3M(
 
         if self.task_step == 0:
             if not check_task_cond(self.now_task, self.target_states):
-                warnings.warn(f'Task {self.now_task} is invalid for state: '
-                              f'{self.states}.')
+                message = (f'Task {self.now_task} is invalid for state: '
+                           f'{self.states}.')
+                logger.warn(message)
+                # warnings.warn(message)
                 # TODO 下一步工作：如何补全miss task
                 missing_task = find_missing_task(self.now_task, self.target_states)
                 if missing_task is None:
-                    warnings.warn(f'Cannot find the missing task, stopped.')
+                    message = (f'Cannot find the missing task, stopped.')
+                    logger.warn(message)
+                    # warnings.warn(message)
                     self.task_step = 0
                     info = {
                         'success': float(False),
@@ -458,8 +462,10 @@ class SawyerEnvV2Display3D3M(
                     self._reset_state(info['success'])
                     return 0., info
                 else:
-                    warnings.warn(f'Find a potential missing task '
-                                  f'{missing_task}, execute it first.')
+                    message = (f'Find a potential missing task '
+                               f'{missing_task}, execute it first.')
+                    logger.warn(message)
+                    # warnings.warn(message)
                     self.task_list.insert(0, missing_task)
                     self.now_task = missing_task
             self._reset_button_offsets()
@@ -545,13 +551,12 @@ class SawyerEnvV2Display3D3M(
             logger.info(f"{done_task} task done")
             self.task_step = 0
             self.after_success_cnt = 0
-            old_states = self.states
-            self.target_states = change_state(done_task,
+            logger.info(f'OLD STATES: {self.states}')
+            self.target_states = change_state(parse_task(done_task),
                                               self.target_states,
                                               self.target_mug_id,
                                               self.target_drawer_id)
-            new_states = self.states
-            logger.info(f'TASK({done_task}): {old_states} -> {new_states}')
+            logger.info(f'NEW STATES: {self.states}')
             if self.random_generate_task:
                 # TODO 下一步工作：如何随机生成任务
                 self.random_generate_next_task()
@@ -608,7 +613,7 @@ class SawyerEnvV2Display3D3M(
             STATE_KEYS.DRAWER: self.states[
                 STATE_KEYS.DRAWER][self.target_drawer_id],
             STATE_KEYS.CUP_IN_DRAWER: self.states[
-                STATE_KEYS.CUP_IN_DRAWER][self.target_drawer_id],
+                STATE_KEYS.CUP_IN_DRAWER][self.target_mug_id],
             STATE_KEYS.DRAWER_CONTAINS_CUP: self.states[
                 STATE_KEYS.DRAWER_CONTAINS_CUP][self.target_drawer_id],
         }

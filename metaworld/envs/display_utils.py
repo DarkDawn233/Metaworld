@@ -192,6 +192,10 @@ def change_state(task: str,
     return states
 
 
+def parse_task(task: str) -> str:
+    return task.split(")")[-1]
+
+
 def check_if_state_valid(states: dict[str, str]):
     assert 'cup' in states.keys()
     assert 'drawer' in states.keys()
@@ -228,12 +232,12 @@ def detect_insert_missing_task(tasklist: list[str]) -> list[str]:
                 message = ('Some tasks are missing but cannot be '
                            'automatically detected. The following tasks '
                            f'will be discarded: {tasklist[idx:]}')
-                warnings.warn(message)
+                # warnings.warn(message)
                 logger.warn(message)
                 return tasklist[:idx]
             else:
                 message = (f'Find a potential missing task {missing_task}.')
-                warnings.warn(message)
+                # warnings.warn(message)
                 logger.warn(message)
                 tasklist_fixed.insert(idx, missing_task)
                 return tasklist_fixed
@@ -327,6 +331,6 @@ def safe_move(from_xyz, to_xyz, p):
     response = p * error
 
     if np.any(np.absolute(response) > 1.):
-        warnings.warn('Constant(s) may be too high. Environments clip response to [-1, 1]')
+        logger.warn('Constant(s) may be too high. Environments clip response to [-1, 1]')
 
     return response
