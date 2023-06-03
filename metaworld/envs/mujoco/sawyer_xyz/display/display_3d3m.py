@@ -30,12 +30,12 @@ from metaworld.envs.mujoco.sawyer_xyz.display.sawyer_reset_display import Sawyer
 from metaworld.envs.display_utils import (random_grid_pos,
                                           check_task_cond,
                                           change_state,
-                                          check_if_state_valid,
+                                          parse_task,
                                           find_missing_task,
                                           TASKS,
                                           STATES,
                                           RGB_COLOR_LIST,
-                                          QUAT_LIST,
+                                          STATE_KEYS,
                                           TASK_RANDOM_PROBABILITY)
 
 
@@ -113,8 +113,11 @@ class SawyerEnvV2Display3D3M(
         self._cup_machine_offset = 0.28
 
         self.random_generate_task = False
-        self._states = {'cup': {idx: None for idx in range(3)},
-                        'drawer':{idx: None for idx in range(3)}}
+        self._states = {
+            STATE_KEYS.CUP: {idx: None for idx in range(3)},
+            STATE_KEYS.DRAWER: {idx: None for idx in range(3)},
+            STATE_KEYS.CUP_IN_DRAWER: {idx: None for idx in range(3)},
+            STATE_KEYS.DRAWER_CONTAINS_CUP: {idx: None for idx in range(3)}}
 
         self.fix_reset_flag = False # 固定重置环境
 
@@ -260,10 +263,10 @@ class SawyerEnvV2Display3D3M(
         self.obj_init_pos = self._get_pos_objects()
         self.prev_obs = self._get_curr_obs_combined_no_goal()
 
-        for idx in self._states['drawer'].keys():
-            self._states['drawer'][idx] = STATES.DRAWER_STATE_CLOSED
-        for idx in self._states['cup'].keys():
-            self._states['cup'][idx] = STATES.CUP_STATE_DESK
+        for idx in self._states[STATE_KEYS.DRAWER].keys():
+            self._states[STATE_KEYS.DRAWER][idx] = STATES.DRAWER_STATE_CLOSED
+        for idx in self._states[STATE_KEYS.CUP].keys():
+            self._states[STATE_KEYS.CUP][idx] = STATES.CUP_STATE_DESK
         logger.info(f"self.obj_init_pos: {self.obj_init_pos}")
         return self._get_obs()
     
@@ -345,7 +348,7 @@ class SawyerEnvV2Display3D3M(
         """
         # TODO  区分 原task_list 和 解析后 task list
         for task in task_list:
-            if task.split(")")[-1] not in self.TASK_LIST:
+            if parse_task(task) not in self.TASK_LIST:
                 raise ValueError(f"Task name error: no task named {task}")
         
     def reset_task_list(self, task_list):
@@ -439,14 +442,17 @@ class SawyerEnvV2Display3D3M(
         #     return 0., info
 
         if self.task_step == 0:
-            # TODO：增加一些非法判断，例如抽屉里不能有两个杯子等
             if not check_task_cond(self.now_task, self.target_states):
-                warnings.warn(f'Task {self.now_task} is invalid for state: '
-                              f'{self.states}.')
+                message = (f'Task {self.now_task} is invalid for state: '
+                           f'{self.states}.')
+                logger.warn(message)
+                # warnings.warn(message)
                 # TODO 下一步工作：如何补全miss task
                 missing_task = find_missing_task(self.now_task, self.target_states)
                 if missing_task is None:
-                    warnings.warn(f'Cannot find the missing task, stopped.')
+                    message = (f'Cannot find the missing task, stopped.')
+                    logger.warn(message)
+                    # warnings.warn(message)
                     self.task_step = 0
                     info = {
                         'success': float(False),
@@ -456,8 +462,10 @@ class SawyerEnvV2Display3D3M(
                     self._reset_state(info['success'])
                     return 0., info
                 else:
-                    warnings.warn(f'Find a potential missing task '
-                                  f'{missing_task}, execute it first.')
+                    message = (f'Find a potential missing task '
+                               f'{missing_task}, execute it first.')
+                    logger.warn(message)
+                    # warnings.warn(message)
                     self.task_list.insert(0, missing_task)
                     self.now_task = missing_task
             self._reset_button_offsets()
@@ -543,11 +551,12 @@ class SawyerEnvV2Display3D3M(
             logger.info(f"{done_task} task done")
             self.task_step = 0
             self.after_success_cnt = 0
-            old_states = self.states
-            # TODO 更改状态表示,输入可以有 done_task: '(green)drawer-open', self.now_task: 'drawer-open', self.target_drawer_id, self.target_mug_id
-            self.target_states = change_state(done_task, self.target_states)
-            new_states = self.states
-            logger.info(f'TASK({done_task}): {old_states} -> {new_states}')
+            logger.info(f'OLD STATES: {self.states}')
+            self.target_states = change_state(parse_task(done_task),
+                                              self.target_states,
+                                              self.target_mug_id,
+                                              self.target_drawer_id)
+            logger.info(f'NEW STATES: {self.states}')
             if self.random_generate_task:
                 # TODO 下一步工作：如何随机生成任务
                 self.random_generate_next_task()
@@ -598,14 +607,28 @@ class SawyerEnvV2Display3D3M(
 
     @property
     def target_states(self) -> dict[str, str]:
-        return dict(cup=self.states['cup'][self.target_mug_id],
-                    drawer=self.states['drawer'][self.target_drawer_id])
+        return {
+            STATE_KEYS.CUP: self.states[
+                STATE_KEYS.CUP][self.target_mug_id],
+            STATE_KEYS.DRAWER: self.states[
+                STATE_KEYS.DRAWER][self.target_drawer_id],
+            STATE_KEYS.CUP_IN_DRAWER: self.states[
+                STATE_KEYS.CUP_IN_DRAWER][self.target_mug_id],
+            STATE_KEYS.DRAWER_CONTAINS_CUP: self.states[
+                STATE_KEYS.DRAWER_CONTAINS_CUP][self.target_drawer_id],
+        }
 
     @target_states.setter
     def target_states(self, states: dict[str, str]):
-        self._states['cup'][self.target_mug_id] = states['cup']
-        self._states['drawer'][self.target_drawer_id] = states['drawer']
-    
+        self._states[STATE_KEYS.CUP][self.target_mug_id] = \
+            states[STATE_KEYS.CUP]
+        self._states[STATE_KEYS.DRAWER][self.target_drawer_id] = \
+            states[STATE_KEYS.DRAWER]
+        self._states[STATE_KEYS.CUP_IN_DRAWER][self.target_mug_id] = \
+            states[STATE_KEYS.CUP_IN_DRAWER]
+        self._states[STATE_KEYS.DRAWER_CONTAINS_CUP][self.target_drawer_id] = \
+            states[STATE_KEYS.DRAWER_CONTAINS_CUP]
+
     def _task_map(self):
         """
         支持的任务列表：
@@ -671,8 +694,4 @@ class SawyerEnvV2Display3D3M(
             self.target_mug_id = int(item[-1])
     
     def _get_target_mug_from_drawer(self):
-        # TODO: 适配对应抽屉中杯子的编号
-        pass
-
-
-        
+        return self.target_states[STATE_KEYS.DRAWER_CONTAINS_CUP]

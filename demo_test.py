@@ -143,10 +143,15 @@ if __name__ == "__main__":
     task_name = 'display-3d3m'
     seed = 0
     demo = Demo(task_name=task_name, seed=seed, fix_reset=True, save_gif=True)
+    # test_task_dict = {
+    #     10: ['(green)drawer-open', '(gray)drawer-open', '(blue)desk-pick', 
+    #          '()coffee-push', '()coffee-button', '()coffee-pull', '(green)drawer-place'],
+    #     1000: 'stop',
+    # }
     test_task_dict = {
-        10: ['(green)drawer-open', '(gray)drawer-open', '(blue)desk-pick', 
-             '()coffee-push', '()coffee-button', '()coffee-pull', '(green)drawer-place'],
-        1000: 'stop',
+        10: ['(green)drawer-open', '(blue)desk-pick', '(green)drawer-place',
+             '(white)desk-pick', '(green)drawer-place',],
+        2000: 'stop',
     }
     
     step = 0
