@@ -346,7 +346,7 @@ class SawyerEnvV2Display3D3M(
         elif self.now_task == TASKS.DESK_PLACE:
             results = self.get_body_quat('obj'+str(self.target_mug_id))
         elif self.now_task in NAME2ENVS.keys():
-            results = NAME2ENVS[self.now_task]._get_pos_objects(self)
+            results = NAME2ENVS[self.now_task]._get_quat_objects(self)
         else:
             raise NotImplementedError()
         return results
