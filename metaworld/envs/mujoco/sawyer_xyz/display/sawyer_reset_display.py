@@ -101,13 +101,10 @@ class SawyerResetHandEnvV2Display(SawyerXYZEnvDisplay):
         return None
 
     def _get_pos_objects(self):
-        return self._get_site_pos('buttonStart')
+        return np.array([0., 0., 0.])
 
     def _get_quat_objects(self):
-        if hasattr(self, 'quat'):
-            return self.quat
-        else:
-            return np.array([1., 0., 0., 0.])
+        return np.array([0., 0., 0., 0.])
 
     def _set_obj_xyz(self, pos):
         qpos = self.data.qpos.flatten()
