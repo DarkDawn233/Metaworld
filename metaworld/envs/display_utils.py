@@ -64,6 +64,8 @@ class Tasks:
 class StateKeys:
     CUP = 'cup'
     DRAWER = 'drawer'
+    COFFEE_MACHINE = 'coffee_machine'
+    HANDLE_OBJECT = 'handle_object'
     CUP_IN_DRAWER = 'cup_in_drawer'
     DRAWER_CONTAINS_CUP = 'drawer_contains_cup'
 
@@ -80,6 +82,7 @@ class States:
     DRAWER_STATE_OPENED = 'OPENED'
     DRAWER_STATE_CLOSED = 'CLOSED'
     DRAWER_IS_EMPTY = None
+    COFFEE_MACHINE_IS_EMPTY = None
 
 
 TASKS = Tasks()
@@ -88,43 +91,107 @@ STATE_KEYS = StateKeys()
 
 
 PRECONDITIONS = {
-    TASKS.COFFEE_BUTTON: {'cup': lambda x: x == STATES.CUP_STATE_MACHINE},
-    TASKS.COFFEE_PULL: {'cup': lambda x: x == STATES.CUP_STATE_MACHINE},
-    TASKS.COFFEE_PUSH: {'cup': lambda x: x == STATES.CUP_STATE_AIR},
+    TASKS.COFFEE_BUTTON: {
+        STATE_KEYS.CUP:
+            lambda x: x == STATES.CUP_STATE_MACHINE},
+    TASKS.COFFEE_PULL: {
+        STATE_KEYS.CUP:
+            lambda x: x == STATES.CUP_STATE_MACHINE,
+        STATE_KEYS.COFFEE_MACHINE:
+            lambda x: x != STATES.COFFEE_MACHINE_IS_EMPTY},
+    TASKS.COFFEE_PUSH: {
+        STATE_KEYS.CUP:
+            lambda x: x == STATES.CUP_STATE_AIR,
+        STATE_KEYS.COFFEE_MACHINE:
+            lambda x: x == STATES.COFFEE_MACHINE_IS_EMPTY},
     TASKS.DRAWER_CLOSE: {
-        'cup': lambda x: x != STATES.CUP_STATE_AIR,
-        'drawer': lambda x: x == STATES.DRAWER_STATE_OPENED},
+        STATE_KEYS.CUP:
+            lambda x: x != STATES.CUP_STATE_AIR,
+        STATE_KEYS.DRAWER:
+            lambda x: x == STATES.DRAWER_STATE_OPENED},
     TASKS.DRAWER_OPEN: {
-        'cup': lambda x: x != STATES.CUP_STATE_AIR,
-        'drawer': lambda x: x == STATES.DRAWER_STATE_CLOSED},
+        STATE_KEYS.CUP:
+            lambda x: x != STATES.CUP_STATE_AIR,
+        STATE_KEYS.DRAWER:
+            lambda x: x == STATES.DRAWER_STATE_CLOSED},
     TASKS.DRAWER_PICK: {
-        'cup': lambda x: x == STATES.CUP_STATE_DRAWER,
-        'drawer': lambda x: x == STATES.DRAWER_STATE_OPENED,
-        'cup_in_drawer': lambda x: x is not STATES.CUP_OUTSIDE_DRAWER,
-        'drawer_contains_cup': lambda x: x is not STATES.DRAWER_IS_EMPTY},
+        STATE_KEYS.CUP:
+            lambda x: x == STATES.CUP_STATE_DRAWER,
+        STATE_KEYS.DRAWER:
+            lambda x: x == STATES.DRAWER_STATE_OPENED,
+        STATE_KEYS.CUP_IN_DRAWER:
+            lambda x: x is not STATES.CUP_OUTSIDE_DRAWER,
+        STATE_KEYS.DRAWER_CONTAINS_CUP:
+            lambda x: x is not STATES.DRAWER_IS_EMPTY},
     TASKS.DRAWER_PLACE: {
-        'cup': lambda x: x == STATES.CUP_STATE_AIR,
-        'drawer': lambda x: x == STATES.DRAWER_STATE_OPENED,
-        'cup_in_drawer': lambda x: x is STATES.CUP_OUTSIDE_DRAWER,
-        'drawer_contains_cup': lambda x: x is STATES.DRAWER_IS_EMPTY},
-    TASKS.DESK_PICK: {'cup': lambda x: x == STATES.CUP_STATE_DESK},
-    TASKS.DESK_PLACE: {'cup': lambda x: x == STATES.CUP_STATE_AIR},
-    TASKS.BIN_PICK: {'cup': lambda x: x == STATES.CUP_STATE_BIN},
-    TASKS.BIN_PLACE: {'cup': lambda x: x == STATES.CUP_STATE_AIR},
-    TASKS.RESET_HAND: {'cup': lambda x: x != STATES.CUP_STATE_AIR},
+        STATE_KEYS.CUP:
+            lambda x: x == STATES.CUP_STATE_AIR,
+        STATE_KEYS.DRAWER:
+            lambda x: x == STATES.DRAWER_STATE_OPENED,
+        STATE_KEYS.CUP_IN_DRAWER:
+            lambda x: x is STATES.CUP_OUTSIDE_DRAWER,
+        STATE_KEYS.DRAWER_CONTAINS_CUP:
+            lambda x: x is STATES.DRAWER_IS_EMPTY},
+    TASKS.DESK_PICK: {
+        STATE_KEYS.CUP:
+            lambda x: x == STATES.CUP_STATE_DESK},
+    TASKS.DESK_PLACE: {
+        STATE_KEYS.CUP:
+            lambda x: x == STATES.CUP_STATE_AIR},
+    TASKS.BIN_PICK: {
+        STATE_KEYS.CUP:
+            lambda x: x == STATES.CUP_STATE_BIN},
+    TASKS.BIN_PLACE: {
+        STATE_KEYS.CUP:
+            lambda x: x == STATES.CUP_STATE_AIR},
+    TASKS.RESET_HAND: {
+        STATE_KEYS.CUP:
+            lambda x: x != STATES.CUP_STATE_AIR},
 }
 POSTSTATES = {
     TASKS.COFFEE_BUTTON: {},
-    TASKS.COFFEE_PULL: {'cup': STATES.CUP_STATE_AIR},
-    TASKS.COFFEE_PUSH: {'cup': STATES.CUP_STATE_MACHINE},
-    TASKS.DRAWER_CLOSE: {'drawer': STATES.DRAWER_STATE_CLOSED},
-    TASKS.DRAWER_OPEN: {'drawer': STATES.DRAWER_STATE_OPENED},
-    TASKS.DRAWER_PICK: {'cup': STATES.CUP_STATE_AIR},
-    TASKS.DRAWER_PLACE: {'cup': STATES.CUP_STATE_DRAWER},
-    TASKS.DESK_PICK: {'cup': STATES.CUP_STATE_AIR},
-    TASKS.DESK_PLACE: {'cup': STATES.CUP_STATE_DESK},
-    TASKS.BIN_PICK: {'cup': STATES.CUP_STATE_AIR},
-    TASKS.BIN_PLACE: {'cup': STATES.CUP_STATE_BIN},
+    TASKS.COFFEE_PULL: {
+        STATE_KEYS.CUP:
+            lambda x: STATES.CUP_STATE_AIR,
+        STATE_KEYS.COFFEE_MACHINE:
+            lambda x: None},
+    TASKS.COFFEE_PUSH: {
+        STATE_KEYS.CUP:
+            lambda x: STATES.CUP_STATE_MACHINE,
+        STATE_KEYS.COFFEE_MACHINE:
+            lambda x: x[STATE_KEYS.HANDLE_OBJECT][STATE_KEYS.COFFEE_MACHINE]},
+    TASKS.DRAWER_CLOSE: {
+        STATE_KEYS.DRAWER:
+            lambda x: STATES.DRAWER_STATE_CLOSED},
+    TASKS.DRAWER_OPEN: {
+        STATE_KEYS.DRAWER:
+            lambda x: STATES.DRAWER_STATE_OPENED},
+    TASKS.DRAWER_PICK: {
+        STATE_KEYS.CUP:
+            lambda x: STATES.CUP_STATE_AIR,
+        STATE_KEYS.CUP_IN_DRAWER:
+            lambda x: None,
+        STATE_KEYS.DRAWER_CONTAINS_CUP:
+            lambda x: None},
+    TASKS.DRAWER_PLACE: {
+        STATE_KEYS.CUP:
+            lambda x: STATES.CUP_STATE_DRAWER,
+        STATE_KEYS.CUP_IN_DRAWER:
+            lambda x: x[STATE_KEYS.HANDLE_OBJECT][STATE_KEYS.DRAWER],
+        STATE_KEYS.DRAWER_CONTAINS_CUP:
+            lambda x: x[STATE_KEYS.HANDLE_OBJECT][STATE_KEYS.CUP]},
+    TASKS.DESK_PICK: {
+        STATE_KEYS.CUP:
+            lambda x: STATES.CUP_STATE_AIR},
+    TASKS.DESK_PLACE: {
+        STATE_KEYS.CUP:
+            lambda x: STATES.CUP_STATE_DESK},
+    TASKS.BIN_PICK: {
+        STATE_KEYS.CUP:
+            lambda x: STATES.CUP_STATE_AIR},
+    TASKS.BIN_PLACE: {
+        STATE_KEYS.CUP:
+            lambda x: STATES.CUP_STATE_BIN},
     TASKS.RESET_HAND: {},
 }
 TASK_RANDOM_PROBABILITY = {
@@ -169,26 +236,12 @@ def check_task_cond(task: str, states: dict[str, str]) -> bool:
     return success
 
 
-def change_state(task: str,
-                 states: dict[str, str],
-                 target_cup_index: int = None,
-                 target_drawer_index: int = None) -> dict[str, str]:
+def change_state(task: str, states: dict[str, str]) -> dict[str, str]:
     states = deepcopy(states)
     obj2state: dict[str, str] = POSTSTATES[task]
     for obj, new_state in obj2state.items():
-        states[obj] = new_state
-
-    # Exceptions.
-    if task == TASKS.DRAWER_PLACE \
-            and STATE_KEYS.CUP_IN_DRAWER in states.keys() \
-            and STATE_KEYS.DRAWER_CONTAINS_CUP in states.keys():
-        states[STATE_KEYS.CUP_IN_DRAWER] = target_drawer_index
-        states[STATE_KEYS.DRAWER_CONTAINS_CUP] = target_cup_index
-    if task == TASKS.DRAWER_PICK \
-            and STATE_KEYS.CUP_IN_DRAWER in states.keys() \
-            and STATE_KEYS.DRAWER_CONTAINS_CUP in states.keys():
-        states[STATE_KEYS.CUP_IN_DRAWER] = None
-        states[STATE_KEYS.DRAWER_CONTAINS_CUP] = None
+        if obj in states.keys():
+            states[obj] = new_state(states)
     return states
 
 

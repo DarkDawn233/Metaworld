@@ -116,15 +116,21 @@ class SawyerEnvV2Display3D3M(
         self._states = {
             STATE_KEYS.CUP: {idx: None for idx in range(3)},
             STATE_KEYS.DRAWER: {idx: None for idx in range(3)},
+            # TODO Adaptively set the number of coffee machine.
+            STATE_KEYS.COFFEE_MACHINE: {0: None},
             STATE_KEYS.CUP_IN_DRAWER: {idx: None for idx in range(3)},
-            STATE_KEYS.DRAWER_CONTAINS_CUP: {idx: None for idx in range(3)}}
+            STATE_KEYS.DRAWER_CONTAINS_CUP: {idx: None for idx in range(3)},
+            STATE_KEYS.HANDLE_OBJECT: {STATE_KEYS.CUP: 0,
+                                       STATE_KEYS.DRAWER: 0,
+                                       STATE_KEYS.COFFEE_MACHINE: 0}}
 
         self.fix_reset_flag = False # 固定重置环境
 
         self.last_step_mug_pos = None
 
-        self.target_mug_id = 0
-        self.target_drawer_id = 0
+        # self.target_mug_id = 0
+        # self.target_drawer_id = 0
+        # self.target_coffee_machine_id = 0
 
         self.color2item_dict = {}
 
@@ -267,9 +273,12 @@ class SawyerEnvV2Display3D3M(
             self._states[STATE_KEYS.DRAWER][idx] = STATES.DRAWER_STATE_CLOSED
         for idx in self._states[STATE_KEYS.CUP].keys():
             self._states[STATE_KEYS.CUP][idx] = STATES.CUP_STATE_DESK
+        for idx in self._states[STATE_KEYS.COFFEE_MACHINE].keys():
+            self._states[STATE_KEYS.COFFEE_MACHINE][idx] = \
+                STATES.COFFEE_MACHINE_IS_EMPTY
         logger.info(f"self.obj_init_pos: {self.obj_init_pos}")
         return self._get_obs()
-    
+
     def fix_reset(self, flag=True):
         self.fix_reset_flag = flag
 
@@ -427,20 +436,6 @@ class SawyerEnvV2Display3D3M(
             self._reset_state(info['success'])
             return 0., info
 
-        # now_task = self.task_list[0]
-        # if now_task == None:
-        #     info = {
-        #         'success': float(False),
-        #         'task_name': None,
-        #         'task_step': self.task_step,
-        #     }
-        #     self.task_step += 1
-        #     if self.task_step >= self.rest_step:
-        #         self.task_list.pop(0)
-        #         self.task_step = 0
-        #     self._reset_state(info['success'])
-        #     return 0., info
-
         if self.task_step == 0:
             if not check_task_cond(self.now_task, self.target_states):
                 message = (f'Task {self.now_task} is invalid for state: '
@@ -460,6 +455,7 @@ class SawyerEnvV2Display3D3M(
                         'task_step': 0,
                     }
                     self._reset_state(info['success'])
+                    self.task_list = list()
                     return 0., info
                 else:
                     message = (f'Find a potential missing task '
@@ -470,6 +466,7 @@ class SawyerEnvV2Display3D3M(
                     self.now_task = missing_task
             self._reset_button_offsets()
             logger.info(f'TaskList: {self.task_list}')
+            logger.info(f'CURRENT TASK: {self.now_task}')
 
         if self.now_task == TASKS.COFFEE_BUTTON:
             if self.task_step == 0:
@@ -553,9 +550,7 @@ class SawyerEnvV2Display3D3M(
             self.after_success_cnt = 0
             logger.info(f'OLD STATES: {self.states}')
             self.target_states = change_state(parse_task(done_task),
-                                              self.target_states,
-                                              self.target_mug_id,
-                                              self.target_drawer_id)
+                                              self.target_states)
             logger.info(f'NEW STATES: {self.states}')
             if self.random_generate_task:
                 # TODO 下一步工作：如何随机生成任务
@@ -612,10 +607,13 @@ class SawyerEnvV2Display3D3M(
                 STATE_KEYS.CUP][self.target_mug_id],
             STATE_KEYS.DRAWER: self.states[
                 STATE_KEYS.DRAWER][self.target_drawer_id],
+            STATE_KEYS.COFFEE_MACHINE: self.states[
+                STATE_KEYS.COFFEE_MACHINE][self.target_coffee_machine_id],
             STATE_KEYS.CUP_IN_DRAWER: self.states[
                 STATE_KEYS.CUP_IN_DRAWER][self.target_mug_id],
             STATE_KEYS.DRAWER_CONTAINS_CUP: self.states[
                 STATE_KEYS.DRAWER_CONTAINS_CUP][self.target_drawer_id],
+            STATE_KEYS.HANDLE_OBJECT: self.states[STATE_KEYS.HANDLE_OBJECT],
         }
 
     @target_states.setter
@@ -624,6 +622,8 @@ class SawyerEnvV2Display3D3M(
             states[STATE_KEYS.CUP]
         self._states[STATE_KEYS.DRAWER][self.target_drawer_id] = \
             states[STATE_KEYS.DRAWER]
+        self._states[STATE_KEYS.COFFEE_MACHINE][self.target_coffee_machine_id] = \
+            states[STATE_KEYS.COFFEE_MACHINE]
         self._states[STATE_KEYS.CUP_IN_DRAWER][self.target_mug_id] = \
             states[STATE_KEYS.CUP_IN_DRAWER]
         self._states[STATE_KEYS.DRAWER_CONTAINS_CUP][self.target_drawer_id] = \
@@ -695,3 +695,35 @@ class SawyerEnvV2Display3D3M(
     
     def _get_target_mug_from_drawer(self):
         return self.target_states[STATE_KEYS.DRAWER_CONTAINS_CUP]
+
+    @property
+    def handle_object(self) -> dict[str, int]:
+        return self.states[STATE_KEYS.HANDLE_OBJECT]
+
+    @property
+    def target_mug_id(self) -> int:
+        return self.handle_object[STATE_KEYS.CUP]
+
+    @target_mug_id.setter
+    def target_mug_id(self, index: int):
+        # TODO Check if the index is valid.
+        self._states[STATE_KEYS.HANDLE_OBJECT][STATE_KEYS.CUP] = index
+
+    @property
+    def target_drawer_id(self) -> int:
+        return self.handle_object[STATE_KEYS.DRAWER]
+
+    @target_drawer_id.setter
+    def target_drawer_id(self, index: int):
+        # TODO Check if the index is valid.
+        self._states[STATE_KEYS.HANDLE_OBJECT][STATE_KEYS.DRAWER] = index
+
+    @property
+    def target_coffee_machine_id(self) -> int:
+        return self.handle_object[STATE_KEYS.COFFEE_MACHINE]
+
+    @target_coffee_machine_id.setter
+    def target_coffee_machine_id(self, index: int):
+        # TODO Check if the index is valid.
+        self._states[STATE_KEYS.HANDLE_OBJECT][
+            STATE_KEYS.COFFEE_MACHINE] = index
