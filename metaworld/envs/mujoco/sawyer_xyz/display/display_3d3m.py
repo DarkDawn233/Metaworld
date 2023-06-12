@@ -655,6 +655,8 @@ class SawyerEnvV2Display3D3M(
             self._get_target_mug_from_drawer()
         if task_name == TASKS.DESK_PICK:
             self._get_target_mug(target_item_pro)
+        if task_name == TASKS.COFFEE_PULL:
+            self._get_target_mug_from_coffee_machine()
         self.now_task = task_name
     
     def _get_target_drawer(self, item_pro):
@@ -692,9 +694,12 @@ class SawyerEnvV2Display3D3M(
             if "mug" not in item:
                 raise ValueError(f"Color {color} miss match mug but {item}")
             self.target_mug_id = int(item[-1])
-    
+
     def _get_target_mug_from_drawer(self):
-        return self.target_states[STATE_KEYS.DRAWER_CONTAINS_CUP]
+        self.target_mug_id = self.target_states[STATE_KEYS.DRAWER_CONTAINS_CUP]
+
+    def _get_target_mug_from_coffee_machine(self):
+        self.target_mug_id = self.target_states[STATE_KEYS.COFFEE_MACHINE]
 
     @property
     def handle_object(self) -> dict[str, int]:
@@ -727,3 +732,16 @@ class SawyerEnvV2Display3D3M(
         # TODO Check if the index is valid.
         self._states[STATE_KEYS.HANDLE_OBJECT][
             STATE_KEYS.COFFEE_MACHINE] = index
+
+    def get_color_info(self):
+        item_colors_dict = {'drawer': [], 'coffee_machine': [], 'mug': []}
+        for color, item in self.color2item_dict.items():
+            for key in item_colors_dict:
+                if key in item:
+                    pos = None
+                    if key == 'drawer':
+                        idx = int(item[-1])
+                        pos = "right" if idx == 0 else ("mid" if idx == 1 else "left")
+                    item_colors_dict[key].append((color, pos))
+                    break
+        return item_colors_dict

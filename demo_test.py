@@ -19,6 +19,7 @@ class Demo(object):
     def __init__(self, task_name, seed=None, fix_reset=True, save_gif=False) -> None:
         random.seed(seed)
         np.random.seed(seed)
+        self.task_name = task_name
         self.env = TASK_DICK[task_name]['env'](seed=seed)
         self.policy = TASK_DICK[task_name]['policy']()
         self.obs = self.env.reset()
@@ -55,6 +56,12 @@ class Demo(object):
         assert isinstance(task_list, list)
         logger.info(f"append_task_list: {task_list}")
         self.env.append_task_list(task_list)
+    
+    def get_color_info(self):
+        if self.task_name == "display-3d3m":
+            return self.env.get_color_info()
+        else:
+            return None
     
     def reset(self) -> None:
         """
@@ -103,6 +110,7 @@ class Demo(object):
         self.step += 1
         if last_task != self.now_task:
             self.task_step = 0
+            logger.info(f"{last_task} task finish at {self.step}")
             self.gif_save(str(self.task_num) + '-' + str(last_task))
             self.task_num += 1
 
@@ -143,6 +151,7 @@ if __name__ == "__main__":
     task_name = 'display-3d3m'
     seed = 0
     demo = Demo(task_name=task_name, seed=seed, fix_reset=True, save_gif=True)
+    print(demo.get_color_info())
     # test_task_dict = {
     #     10: ['(green)drawer-open', '(gray)drawer-open', '(blue)desk-pick', 
     #          '()coffee-push', '()coffee-button', '()coffee-pull', '(green)drawer-place'],
@@ -153,10 +162,22 @@ if __name__ == "__main__":
     #          '(white)desk-pick', '(green)drawer-place',],
     #     2000: 'stop',
     # }
+    # test_task_dict = {
+    #     10: ['(left)drawer-open'],
+    #     200: 'stop'
+    # }
     test_task_dict = {
-        10: ['(left)drawer-open'],
-        200: 'stop'
+        10: ['(left)drawer-open', '(blue)desk-pick', '(gray)drawer-place',
+             '()reset-hand',
+             '(green)drawer-open', '(black)desk-pick', 
+             '()coffee-push', '()coffee-button', '()coffee-pull', '(mid)drawer-place',
+             '(left)drawer-close'],
+        3000: 'stop',
     }
+    # test_task_dict = {
+    #     10: ['()reset-hand'],
+    #     200: 'stop'
+    # }
     
     step = 0
     while True:
