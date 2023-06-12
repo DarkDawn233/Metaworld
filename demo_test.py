@@ -8,6 +8,7 @@ import copy
 import logging
 import time
 from metaworld.envs.env_utils import get_logger
+from PIL import Image
 
 
 logger = get_logger(__name__)
@@ -142,12 +143,96 @@ class Demo(object):
             logger.info(f'saving gif {file_path}')
             imageio.mimsave(str(file_path), self.img_list, duration=40)
             self.img_list = []
+    
+    def img_save(self, img) -> None:
+        root_path = Path(__file__).parent / 'data_demo' / self.gif_file_name
+        root_path.mkdir(exist_ok=True, parents=True)
+        file_path = root_path / ('now.png')
+        im = Image.fromarray(img)
+        im.save(file_path)
 
     def read_states(self) -> str:
         return self.env.read_states()
+    
+    def empty_task(self) -> bool:
+        return len(self.env.task_list) == 0
+
+def rebuild(x):
+    color_dict = {
+        "bla": "black",  
+        "whi": "white",  
+        "red": "red",    
+        "gre": "green",  
+        "blu": "blue",   
+        "yel": "yellow", 
+        "cya": "cyan",   
+        "car": "carmine",
+        "gra": "gray",   
+        "ora": "orange", 
+        "pur": "purple", 
+        "bro": "brown",
+
+        "lef": "left",
+        "mid": "mid",
+        "rig": "right",
+    }
+    
+    task_dict = {
+        'cobu': 'coffee-button',
+        'coll': 'coffee-pull',
+        'cosh': 'coffee-push',
+        'drcl': 'drawer-close',
+        'drop': 'drawer-open',
+        'drpi': 'drawer-pick',
+        'drpl': 'drawer-place',
+        'depi': 'desk-pick',
+        'depl': 'desk-place',
+    }
+    try:
+        if len(x) == 7:
+            return '(' + color_dict[x[0:3]] + ')' + task_dict[x[3:3+4]]
+        else:
+            return '()' + task_dict[x]
+    except:
+        return None
 
 
-if __name__ == "__main__":
+def interact_test():
+    task_name = 'display-3d3m'
+    seed = 0
+    demo = Demo(task_name=task_name, seed=seed, fix_reset=True, save_gif=True)
+    step = 0
+    sleep_time = 0
+    while True:
+        img = demo.env_step()
+        if sleep_time > 0:
+            sleep_time -= 1
+            step += 1
+            continue
+
+        if demo.empty_task():
+            demo.img_save(img)
+            instruction = input("new instruction:")
+            if isinstance(instruction, str):
+                if "sleep" in instruction:
+                    sleep_time = eval(instruction[6:])
+                if instruction == 'reset':
+                    demo.reset()
+                elif instruction == 'stop':
+                    demo.gif_save('stop')
+                    break
+                else:
+                    new_instruction = rebuild(instruction)
+                    if new_instruction is None:
+                        print(f"Error instruction")
+                    else:
+                        demo.append_task_list([new_instruction])
+                    
+        step += 1
+        if demo.over():
+            raise Exception(f"Task {demo.now_task} Policy failed.")
+
+def main():
     task_name = 'display-3d3m'
     seed = 0
     demo = Demo(task_name=task_name, seed=seed, fix_reset=True, save_gif=True)
@@ -180,6 +265,7 @@ if __name__ == "__main__":
     # }
     
     step = 0
+    sleep_time = 0
     while True:
         """
         目前暂不支持对书架进行操作
@@ -202,6 +288,10 @@ if __name__ == "__main__":
         'stop':     停止环境运行
         """
         img = demo.env_step()
+        if sleep_time > 0:
+            sleep_time -= 1
+            step += 1
+            continue
         # TODO 推流
         # TODO 获取指令instruction
         # reset 表示重置环境 stop 表示停止演示
@@ -209,7 +299,9 @@ if __name__ == "__main__":
         if isinstance(instruction, list):
             demo.append_task_list(instruction)
         elif isinstance(instruction, str):
-            if instruction == 'reset':
+            if "sleep" in instruction:
+                sleep_time = eval(instruction[6:])
+            elif instruction == 'reset':
                 demo.reset()
             elif instruction == 'stop':
                 demo.gif_save('stop')
@@ -220,4 +312,7 @@ if __name__ == "__main__":
         if demo.over():
             raise Exception(f"Task {demo.now_task} Policy failed.")
     # demo.gif_save(name=time.strftime("%H:%M:%S",time.gmtime()))
+
+if __name__ == "__main__":
+    interact_test()
     
