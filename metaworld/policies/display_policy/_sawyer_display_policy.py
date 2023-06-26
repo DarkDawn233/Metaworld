@@ -28,6 +28,7 @@ class SawyerV2DisplayPolicy(Policy):
     def __init__(self):
         self.policy = None
         self.task_name = None
+        self.full_task_name = None
         self.last_action = None
 
     @staticmethod
@@ -42,10 +43,12 @@ class SawyerV2DisplayPolicy(Policy):
         }
 
     def get_action(self, obs, now_task, info={}):
-        if now_task != self.task_name:
+        full_now_task = info.get('full_task_name', now_task)
+        if full_now_task != self.full_task_name:
             self.task_name = now_task
+            self.full_task_name = full_now_task
             if now_task == TASKS.COFFEE_BUTTON:
-                self.policy = SawyerCoffeeButtonV2DisplayPolicy()
+                self.policy = SawyerCoffeeButtonV2DisplayPolicy(safe_move=True)
             elif now_task == TASKS.COFFEE_PULL:
                 # self.policy = SawyerCoffeePullV2DisplayPolicy()
                 self.policy = SawyerPickV2DisplayPolicy()
@@ -53,9 +56,9 @@ class SawyerV2DisplayPolicy(Policy):
                 # self.policy = SawyerCoffeePushV2DisplayPolicy()
                 self.policy = SawyerPlaceV2DisplayPolicy()
             elif now_task == TASKS.DRAWER_CLOSE:
-                self.policy = SawyerDrawerCloseV2DisplayPolicy()
+                self.policy = SawyerDrawerCloseV2DisplayPolicy(safe_move=True)
             elif now_task == TASKS.DRAWER_OPEN:
-                self.policy = SawyerDrawerOpenV2DisplayPolicy()
+                self.policy = SawyerDrawerOpenV2DisplayPolicy(safe_move=True)
             elif now_task == TASKS.DRAWER_PICK:
                 # self.policy = SawyerDrawerPickV2DisplayPolicy()
                 self.policy = SawyerPickV2DisplayPolicy()

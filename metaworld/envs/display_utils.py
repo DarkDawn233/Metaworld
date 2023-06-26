@@ -68,6 +68,7 @@ class StateKeys:
     HANDLE_OBJECT = 'handle_object'
     CUP_IN_DRAWER = 'cup_in_drawer'
     DRAWER_CONTAINS_CUP = 'drawer_contains_cup'
+    GRIPPER = 'gripper'
 
 
 @dataclass(frozen=True)
@@ -83,6 +84,8 @@ class States:
     DRAWER_STATE_CLOSED = 'CLOSED'
     DRAWER_IS_EMPTY = None
     COFFEE_MACHINE_IS_EMPTY = None
+    GRIPPER_STATE_AIR = 'AIR'
+    GRIPPER_STATE_CUP = 'CUP'
 
 
 TASKS = Tasks()
@@ -93,27 +96,42 @@ STATE_KEYS = StateKeys()
 PRECONDITIONS = {
     TASKS.COFFEE_BUTTON: {
         STATE_KEYS.CUP:
-            lambda x: x == STATES.CUP_STATE_MACHINE},
+            lambda x: x == STATES.CUP_STATE_MACHINE,
+        STATE_KEYS.GRIPPER:
+            lambda x: x == STATES.GRIPPER_STATE_AIR,
+        },
     TASKS.COFFEE_PULL: {
         STATE_KEYS.CUP:
             lambda x: x == STATES.CUP_STATE_MACHINE,
         STATE_KEYS.COFFEE_MACHINE:
-            lambda x: x != STATES.COFFEE_MACHINE_IS_EMPTY},
+            lambda x: x != STATES.COFFEE_MACHINE_IS_EMPTY,
+        STATE_KEYS.GRIPPER:
+            lambda x: x == STATES.GRIPPER_STATE_AIR,
+        },
     TASKS.COFFEE_PUSH: {
         STATE_KEYS.CUP:
             lambda x: x == STATES.CUP_STATE_AIR,
         STATE_KEYS.COFFEE_MACHINE:
-            lambda x: x == STATES.COFFEE_MACHINE_IS_EMPTY},
+            lambda x: x == STATES.COFFEE_MACHINE_IS_EMPTY,
+        STATE_KEYS.GRIPPER:
+            lambda x: x == STATES.GRIPPER_STATE_CUP,
+        },
     TASKS.DRAWER_CLOSE: {
         STATE_KEYS.CUP:
             lambda x: x != STATES.CUP_STATE_AIR,
         STATE_KEYS.DRAWER:
-            lambda x: x == STATES.DRAWER_STATE_OPENED},
+            lambda x: x == STATES.DRAWER_STATE_OPENED,
+        STATE_KEYS.GRIPPER:
+            lambda x: x == STATES.GRIPPER_STATE_AIR,
+        },
     TASKS.DRAWER_OPEN: {
         STATE_KEYS.CUP:
             lambda x: x != STATES.CUP_STATE_AIR,
         STATE_KEYS.DRAWER:
-            lambda x: x == STATES.DRAWER_STATE_CLOSED},
+            lambda x: x == STATES.DRAWER_STATE_CLOSED,
+        STATE_KEYS.GRIPPER:
+            lambda x: x == STATES.GRIPPER_STATE_AIR,
+        },
     TASKS.DRAWER_PICK: {
         STATE_KEYS.CUP:
             lambda x: x == STATES.CUP_STATE_DRAWER,
@@ -122,7 +140,10 @@ PRECONDITIONS = {
         STATE_KEYS.CUP_IN_DRAWER:
             lambda x: x is not STATES.CUP_OUTSIDE_DRAWER,
         STATE_KEYS.DRAWER_CONTAINS_CUP:
-            lambda x: x is not STATES.DRAWER_IS_EMPTY},
+            lambda x: x is not STATES.DRAWER_IS_EMPTY,
+        STATE_KEYS.GRIPPER:
+            lambda x: x == STATES.GRIPPER_STATE_AIR,
+        },
     TASKS.DRAWER_PLACE: {
         STATE_KEYS.CUP:
             lambda x: x == STATES.CUP_STATE_AIR,
@@ -131,22 +152,36 @@ PRECONDITIONS = {
         STATE_KEYS.CUP_IN_DRAWER:
             lambda x: x is STATES.CUP_OUTSIDE_DRAWER,
         STATE_KEYS.DRAWER_CONTAINS_CUP:
-            lambda x: x is STATES.DRAWER_IS_EMPTY},
+            lambda x: x is STATES.DRAWER_IS_EMPTY,
+        STATE_KEYS.GRIPPER:
+            lambda x: x == STATES.GRIPPER_STATE_CUP,
+        },
     TASKS.DESK_PICK: {
         STATE_KEYS.CUP:
-            lambda x: x == STATES.CUP_STATE_DESK},
+            lambda x: x == STATES.CUP_STATE_DESK,
+        STATE_KEYS.GRIPPER:
+            lambda x: x == STATES.GRIPPER_STATE_AIR,
+        },
     TASKS.DESK_PLACE: {
         STATE_KEYS.CUP:
-            lambda x: x == STATES.CUP_STATE_AIR},
+            lambda x: x == STATES.CUP_STATE_AIR,
+        STATE_KEYS.GRIPPER:
+            lambda x: x == STATES.GRIPPER_STATE_CUP,
+        },
     TASKS.BIN_PICK: {
         STATE_KEYS.CUP:
-            lambda x: x == STATES.CUP_STATE_BIN},
+            lambda x: x == STATES.CUP_STATE_BIN
+        },
     TASKS.BIN_PLACE: {
         STATE_KEYS.CUP:
-            lambda x: x == STATES.CUP_STATE_AIR},
+            lambda x: x == STATES.CUP_STATE_AIR
+        },
     TASKS.RESET_HAND: {
         STATE_KEYS.CUP:
-            lambda x: x != STATES.CUP_STATE_AIR},
+            lambda x: x != STATES.CUP_STATE_AIR,
+        STATE_KEYS.GRIPPER:
+            lambda x: x == STATES.GRIPPER_STATE_AIR,
+        },
 }
 POSTSTATES = {
     TASKS.COFFEE_BUTTON: {},
@@ -154,44 +189,70 @@ POSTSTATES = {
         STATE_KEYS.CUP:
             lambda x: STATES.CUP_STATE_AIR,
         STATE_KEYS.COFFEE_MACHINE:
-            lambda x: None},
+            lambda x: None,
+        STATE_KEYS.GRIPPER:
+            lambda x: STATES.GRIPPER_STATE_CUP,
+        },
     TASKS.COFFEE_PUSH: {
         STATE_KEYS.CUP:
             lambda x: STATES.CUP_STATE_MACHINE,
         STATE_KEYS.COFFEE_MACHINE:
-            lambda x: x[STATE_KEYS.HANDLE_OBJECT][STATE_KEYS.CUP]},
+            lambda x: x[STATE_KEYS.HANDLE_OBJECT][STATE_KEYS.CUP],
+        STATE_KEYS.GRIPPER:
+            lambda x: STATES.GRIPPER_STATE_AIR,
+        },
     TASKS.DRAWER_CLOSE: {
         STATE_KEYS.DRAWER:
-            lambda x: STATES.DRAWER_STATE_CLOSED},
+            lambda x: STATES.DRAWER_STATE_CLOSED,
+        STATE_KEYS.GRIPPER:
+            lambda x: STATES.GRIPPER_STATE_AIR,
+        },
     TASKS.DRAWER_OPEN: {
         STATE_KEYS.DRAWER:
-            lambda x: STATES.DRAWER_STATE_OPENED},
+            lambda x: STATES.DRAWER_STATE_OPENED,
+        STATE_KEYS.GRIPPER:
+            lambda x: STATES.GRIPPER_STATE_AIR,
+        },
     TASKS.DRAWER_PICK: {
         STATE_KEYS.CUP:
             lambda x: STATES.CUP_STATE_AIR,
         STATE_KEYS.CUP_IN_DRAWER:
             lambda x: None,
         STATE_KEYS.DRAWER_CONTAINS_CUP:
-            lambda x: None},
+            lambda x: None,
+        STATE_KEYS.GRIPPER:
+            lambda x: STATES.GRIPPER_STATE_CUP,
+        },
     TASKS.DRAWER_PLACE: {
         STATE_KEYS.CUP:
             lambda x: STATES.CUP_STATE_DRAWER,
         STATE_KEYS.CUP_IN_DRAWER:
             lambda x: x[STATE_KEYS.HANDLE_OBJECT][STATE_KEYS.DRAWER],
         STATE_KEYS.DRAWER_CONTAINS_CUP:
-            lambda x: x[STATE_KEYS.HANDLE_OBJECT][STATE_KEYS.CUP]},
+            lambda x: x[STATE_KEYS.HANDLE_OBJECT][STATE_KEYS.CUP],
+        STATE_KEYS.GRIPPER:
+            lambda x: STATES.GRIPPER_STATE_AIR,
+        },
     TASKS.DESK_PICK: {
         STATE_KEYS.CUP:
-            lambda x: STATES.CUP_STATE_AIR},
+            lambda x: STATES.CUP_STATE_AIR,
+        STATE_KEYS.GRIPPER:
+            lambda x: STATES.GRIPPER_STATE_CUP,
+        },
     TASKS.DESK_PLACE: {
         STATE_KEYS.CUP:
-            lambda x: STATES.CUP_STATE_DESK},
+            lambda x: STATES.CUP_STATE_DESK,
+        STATE_KEYS.GRIPPER:
+            lambda x: STATES.GRIPPER_STATE_AIR,
+        },
     TASKS.BIN_PICK: {
         STATE_KEYS.CUP:
-            lambda x: STATES.CUP_STATE_AIR},
+            lambda x: STATES.CUP_STATE_AIR,
+        },
     TASKS.BIN_PLACE: {
         STATE_KEYS.CUP:
-            lambda x: STATES.CUP_STATE_BIN},
+            lambda x: STATES.CUP_STATE_BIN
+        },
     TASKS.RESET_HAND: {},
 }
 TASK_RANDOM_PROBABILITY = {

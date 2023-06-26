@@ -79,6 +79,7 @@ class Demo(object):
         self.step = 0
         self.task_step = 0
         self.now_task = None
+        self.full_now_task = None
         # 重置策略 / 考虑模型是否有重置操作
         self.policy.reset()
         
@@ -106,13 +107,15 @@ class Demo(object):
         action = np.clip(action, -1, 1)
 
         last_task = self.info.get('task_name', None)
+        full_last_task = self.info.get('full_task_name', last_task)
         self.obs, reward, self.done, self.info = self.env.step(action)
         self.now_task = self.info['task_name']
+        self.full_now_task = self.info.get('full_task_name', self.now_task)
         self.step += 1
-        if last_task != self.now_task:
+        if full_last_task != self.full_now_task:
             self.task_step = 0
-            logger.info(f"{last_task} task finish at {self.step}")
-            self.gif_save(str(self.task_num) + '-' + str(last_task))
+            logger.info(f"{full_last_task} task finish at {self.step}")
+            self.gif_save(str(self.task_num) + '-' + str(full_last_task))
             self.task_num += 1
 
         else:
@@ -127,7 +130,7 @@ class Demo(object):
             return False
         over_f = self.task_step > self.task_max_step
         if over_f:
-            self.gif_save(str(self.task_num) + '-' + self.now_task + '-' + 'fail')
+            self.gif_save(str(self.task_num) + '-' + self.full_now_task + '-' + 'fail')
         return over_f
     
     def gif_save(self, name : str = None) -> None:
@@ -141,6 +144,9 @@ class Demo(object):
             root_path.mkdir(exist_ok=True, parents=True)
             file_path = root_path / (name + '.gif')
             logger.info(f'saving gif {file_path}')
+            if len(self.img_list) == 0:
+                logger.info(f'no img to save gif {file_path}')
+                return 
             imageio.mimsave(str(file_path), self.img_list, duration=40)
             self.img_list = []
     
@@ -232,6 +238,21 @@ def interact_test():
         if demo.over():
             raise Exception(f"Task {demo.now_task} Policy failed.")
 
+def random_test(seed=0):
+    task_name = 'display-3d3m'
+    demo = Demo(task_name=task_name, seed=seed, fix_reset=True, save_gif=True)
+    demo.env.set_random_generate_task(True)
+    step = 0
+    sleep_time = 0
+    while True:
+        img = demo.env_step()           
+        step += 1
+        if step >= 6000:
+            break
+        if demo.over():
+            # raise Exception(f"Task {demo.full_now_task} Policy failed.")
+            print(f"Task {demo.full_now_task} Policy failed.")
+
 def main():
     task_name = 'display-3d3m'
     seed = 0
@@ -310,9 +331,12 @@ def main():
                 raise ValueError(f"Error instruction: {instruction}")
         step += 1
         if demo.over():
+            # print(f"Task {demo.now_task} Policy failed.")
             raise Exception(f"Task {demo.now_task} Policy failed.")
     # demo.gif_save(name=time.strftime("%H:%M:%S",time.gmtime()))
 
 if __name__ == "__main__":
-    interact_test()
+    # interact_test()
+    for i in range(0, 20):
+        random_test(i)
     

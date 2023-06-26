@@ -108,6 +108,7 @@ class SawyerEnvV2Display3D3M(
 
         self.task_list = []
         self.now_task = ""
+        self.full_now_task = ""
         self.task_step = 0
         self.task_done = True
         self._cup_machine_offset = 0.28
@@ -122,7 +123,8 @@ class SawyerEnvV2Display3D3M(
             STATE_KEYS.DRAWER_CONTAINS_CUP: {idx: None for idx in range(3)},
             STATE_KEYS.HANDLE_OBJECT: {STATE_KEYS.CUP: 0,
                                        STATE_KEYS.DRAWER: 0,
-                                       STATE_KEYS.COFFEE_MACHINE: 0}}
+                                       STATE_KEYS.COFFEE_MACHINE: 0},
+            STATE_KEYS.GRIPPER: STATES.GRIPPER_STATE_AIR}
 
         self.fix_reset_flag = False # 固定重置环境
 
@@ -166,14 +168,13 @@ class SawyerEnvV2Display3D3M(
         self.sim.model.body_quat[
             self.sim.model.body_name2id('coffee_machine')
         ] = quat
-
-    
+  
     def _random_init_mug_pos(self):
         forbid_list = [((drawer_pos[0]-0.25, drawer_pos[0]+0.25),
                         (drawer_pos[1]-0.4, drawer_pos[1]+0.2)) for drawer_pos in self.drawer_init_pos]
         forbid_list.append(
             ((self.coffee_machine_init_pos[0]-0.25, self.coffee_machine_init_pos[0]+0.25),
-             (self.coffee_machine_init_pos[1]-0.3, self.coffee_machine_init_pos[1]+0.2))
+             (self.coffee_machine_init_pos[1]-0.4, self.coffee_machine_init_pos[1]+0.2))
         )
         qpos = self.data.qpos.flat.copy()
         qvel = self.data.qvel.flat.copy()
@@ -419,9 +420,11 @@ class SawyerEnvV2Display3D3M(
     def step(self, action):
         if self.task_step == 0 and len(self.task_list) > 0:
             # 分解当前任务 -> target_mug_id / target_drawer_id
-            self._task_map()
+            now_task = self.task_list[0]
+            self.now_task, self._states = self._task_map(now_task)
+            self.full_now_task = self.task_list[0]
+            logger.info(f'SET STATES: {self.states}')
         return super(SawyerEnvV2Display3D3M, self).step(action)
-
 
     @_assert_task_is_set
     def evaluate_state(self, obs, action):
@@ -532,6 +535,7 @@ class SawyerEnvV2Display3D3M(
         reward, info = NAME2ENVS[self.now_task].evaluate_state(self, obs, action)
 
         info['task_name'] = self.now_task
+        info['full_task_name'] = self.full_now_task
 
         self.task_step += 1
         info['task_step'] = self.task_step
@@ -558,15 +562,17 @@ class SawyerEnvV2Display3D3M(
 
         return reward, info
 
-    def _random_init_point(self, pos=None):
+    def _random_init_point(self, mug_id, pos=None):
         if pos is None:
             x_range = [-0.5, 0.5]
             y_range = [0.4, 0.9]
             forbid_list = [((drawer_pos[0]-0.25, drawer_pos[0]+0.25),
                         (drawer_pos[1]-0.4, drawer_pos[1]+0.2)) for drawer_pos in self.drawer_init_pos] + \
                         [((self.coffee_machine_init_pos[0]-0.25, self.coffee_machine_init_pos[0]+0.25),
-                          (self.coffee_machine_init_pos[1]-0.3, self.coffee_machine_init_pos[1]+0.2))]
+                          (self.coffee_machine_init_pos[1]-0.4, self.coffee_machine_init_pos[1]+0.2))]
             for i in range(3):
+                if i == mug_id:
+                    continue
                 mug_pos = self.get_body_com('obj'+str(i))
                 forbid_list.append(((mug_pos[0]-0.1, mug_pos[0]+0.1),
                                     (mug_pos[1]-0.1, mug_pos[1]+0.1)))
@@ -582,14 +588,58 @@ class SawyerEnvV2Display3D3M(
         self.random_generate_task = flag
         self.random_generate_next_task()
 
+    def get_full_task_name(self, task_name, color_info):
+        """
+        '()coffee-button'                   按咖啡机按钮      
+        '()coffee-pull'                     将咖啡机旁的杯子拿走【要求接完咖啡后必须拿走咖啡杯，若无要求则放桌上】
+        '()coffee-push'                     将手中的杯子放到咖啡机旁
+        '(color/pos_drawer)drawer-close'    将(color/pos_drawer)的抽屉关上
+        '(color/pos_drawer)drawer-open'     将(color/pos_drawer)的抽屉打开
+        '(color/pos_drawer)drawer-pick'     将(color/pos_drawer)的抽屉中的杯子取出
+        '(color/pos_drawer)drawer-place'    将手中的杯子放到(color/pos_drawer)的抽屉中
+        '(color/pos_mug)desk-pick'          将(color/pos_mug)的杯子从桌上拿起
+        '()desk-place'                      将手中的杯子放到桌面上
+        '()reset-hand'                      机械臂复位
+        """
+        no_color_tasks = [TASKS.COFFEE_BUTTON,
+                          TASKS.COFFEE_PULL,
+                          TASKS.COFFEE_PUSH,
+                          TASKS.DESK_PLACE,
+                          TASKS.RESET_HAND]
+        drawer_color_tasks = [TASKS.DRAWER_CLOSE,
+                              TASKS.DRAWER_OPEN,
+                              TASKS.DRAWER_PICK,
+                              TASKS.DRAWER_PLACE]
+        mug_color_tasks = [TASKS.DESK_PICK]
+
+        if task_name in no_color_tasks:
+            return [f"(){task_name}"]
+        if task_name in drawer_color_tasks:
+            return [f"({color[0]}){task_name}" for color in color_info['drawer']]
+        if task_name in mug_color_tasks:
+            return [f"({color[0]}){task_name}" for color in color_info['mug']]
+
     def random_generate_next_task(self):
-        total_tasks = deepcopy(list(NAME2ENVS.keys()))
+        color_info = self.get_color_info()
+        # for task_name in NAME2ENVS.keys()
+        total_tasks = []
+        for task_name in list(NAME2ENVS.keys()):
+            total_tasks += self.get_full_task_name(task_name, color_info)
+        # total_tasks = deepcopy(list(NAME2ENVS.keys()))
         valid_tasks = list()
         valid_probs = list()
         for next_task in total_tasks:
-            if check_task_cond(next_task, self.target_states):
+            # print("next_task:", next_task)
+            next_task_name, next_states = self._task_map(next_task)
+            next_target_states = self.get_target_states(next_states)
+            
+            # print("next_states:", next_states)
+            # print("next_target_states:", next_target_states)
+            # if check_task_cond(next_task, self.target_states):
+            if check_task_cond(next_task_name, next_target_states):
                 valid_tasks.append(next_task)
-                valid_probs.append(TASK_RANDOM_PROBABILITY[next_task])
+                valid_probs.append(TASK_RANDOM_PROBABILITY[next_task_name])
+        logger.info(f"random task list: {valid_tasks}")
         self.task_list = random.choices(valid_tasks, weights=valid_probs, k=1)
         logger.info(f"random reset task list: {self.task_list}")
 
@@ -614,6 +664,27 @@ class SawyerEnvV2Display3D3M(
             STATE_KEYS.DRAWER_CONTAINS_CUP: self.states[
                 STATE_KEYS.DRAWER_CONTAINS_CUP][self.target_drawer_id],
             STATE_KEYS.HANDLE_OBJECT: self.states[STATE_KEYS.HANDLE_OBJECT],
+            STATE_KEYS.GRIPPER: self.states[STATE_KEYS.GRIPPER],
+        }
+    
+    def get_target_states(self, states):
+        # print("states:", states)
+        target_mug_id = states[STATE_KEYS.HANDLE_OBJECT][STATE_KEYS.CUP]
+        target_drawer_id = states[STATE_KEYS.HANDLE_OBJECT][STATE_KEYS.DRAWER]
+        target_coffee_machine_id = states[STATE_KEYS.HANDLE_OBJECT][STATE_KEYS.COFFEE_MACHINE]
+        return {
+            STATE_KEYS.CUP: states[
+                STATE_KEYS.CUP][target_mug_id],
+            STATE_KEYS.DRAWER: states[
+                STATE_KEYS.DRAWER][target_drawer_id],
+            STATE_KEYS.COFFEE_MACHINE: states[
+                STATE_KEYS.COFFEE_MACHINE][target_coffee_machine_id],
+            STATE_KEYS.CUP_IN_DRAWER: states[
+                STATE_KEYS.CUP_IN_DRAWER][target_mug_id],
+            STATE_KEYS.DRAWER_CONTAINS_CUP: states[
+                STATE_KEYS.DRAWER_CONTAINS_CUP][target_drawer_id],
+            STATE_KEYS.HANDLE_OBJECT: states[STATE_KEYS.HANDLE_OBJECT],
+            STATE_KEYS.GRIPPER: states[STATE_KEYS.GRIPPER]
         }
 
     @target_states.setter
@@ -628,8 +699,9 @@ class SawyerEnvV2Display3D3M(
             states[STATE_KEYS.CUP_IN_DRAWER]
         self._states[STATE_KEYS.DRAWER_CONTAINS_CUP][self.target_drawer_id] = \
             states[STATE_KEYS.DRAWER_CONTAINS_CUP]
+        self._states[STATE_KEYS.GRIPPER] = states[STATE_KEYS.GRIPPER]
 
-    def _task_map(self):
+    def _task_map(self, now_task):
         """
         支持的任务列表：
         '()coffee-button'                   按咖啡机按钮      
@@ -646,26 +718,33 @@ class SawyerEnvV2Display3D3M(
         color: 物体颜色
         pos:   方位描述(left, right, mid)
         """
-        now_task = self.task_list[0]
+        # now_task = self.task_list[0]
+        new_states = deepcopy(self._states)
+        # print("old_states:", new_states)
         target_item_pro, task_name = now_task.split(")")
         target_item_pro = target_item_pro[1:]
         if task_name in [TASKS.DRAWER_CLOSE, TASKS.DRAWER_OPEN, TASKS.DRAWER_PICK, TASKS.DRAWER_PLACE]:
-            self._get_target_drawer(target_item_pro)
+            new_states = self._get_target_drawer(target_item_pro, new_states)
         if task_name == TASKS.DRAWER_PICK:
-            self._get_target_mug_from_drawer()
+            new_states = self._get_target_mug_from_drawer(new_states)
         if task_name == TASKS.DESK_PICK:
-            self._get_target_mug(target_item_pro)
-        if task_name == TASKS.COFFEE_PULL:
-            self._get_target_mug_from_coffee_machine()
-        self.now_task = task_name
+            new_states = self._get_target_mug(target_item_pro, new_states)
+        if task_name in [TASKS.COFFEE_PULL, TASKS.COFFEE_BUTTON]:
+            new_states = self._get_target_mug_from_coffee_machine(new_states)
+        # print("new_states:", new_states)
+        return task_name, new_states
+        # self.now_task = task_name
     
-    def _get_target_drawer(self, item_pro):
+    def _get_target_drawer(self, item_pro, states):
         if item_pro == "right":
-            self.target_drawer_id = 0
+            # self.target_drawer_id = 0
+            states[STATE_KEYS.HANDLE_OBJECT][STATE_KEYS.DRAWER] = 0
         elif item_pro == "mid":
-            self.target_drawer_id = 1
+            # self.target_drawer_id = 1
+            states[STATE_KEYS.HANDLE_OBJECT][STATE_KEYS.DRAWER] = 1
         elif item_pro == "left":
-            self.target_drawer_id = 2
+            # self.target_drawer_id = 2
+            states[STATE_KEYS.HANDLE_OBJECT][STATE_KEYS.DRAWER] = 2
         else:
             color = item_pro
             if color not in self.color2item_dict:
@@ -673,33 +752,51 @@ class SawyerEnvV2Display3D3M(
             item = self.color2item_dict[color]
             if "drawer" not in item:
                 raise ValueError(f"Color {color} miss match drawer but {item}")
-            self.target_drawer_id = int(item[-1])
+            # self.target_drawer_id = int(item[-1])
+            states[STATE_KEYS.HANDLE_OBJECT][STATE_KEYS.DRAWER] = int(item[-1])
+        return states
     
-    def _get_target_mug(self, item_pro):
+    def _get_target_mug(self, item_pro, states):
         mug_list = []
         for i in range(3):
             mug_list.append((self.get_body_com('obj'+str(i))[0], i))
         mug_list.sort(key=lambda x:x[0])
         if item_pro == "right":
-            self.target_mug_id = mug_list[0][1]
+            # self.target_mug_id = mug_list[0][1]
+            states[STATE_KEYS.HANDLE_OBJECT][STATE_KEYS.CUP] = mug_list[0][1]
         elif item_pro == "mid":
-            self.target_mug_id = mug_list[1][1]
+            # self.target_mug_id = mug_list[1][1]
+            states[STATE_KEYS.HANDLE_OBJECT][STATE_KEYS.CUP] = mug_list[1][1]
         elif item_pro == "left":
-            self.target_mug_id = mug_list[2][1]
+            # self.target_mug_id = mug_list[2][1]
+            states[STATE_KEYS.HANDLE_OBJECT][STATE_KEYS.CUP] = mug_list[2][1]
         else:
             color = item_pro
             if color not in self.color2item_dict:
                 raise ValueError(f"No item match color {color}")
             item = self.color2item_dict[color]
             if "mug" not in item:
+                #TODO warning
                 raise ValueError(f"Color {color} miss match mug but {item}")
-            self.target_mug_id = int(item[-1])
+            # self.target_mug_id = int(item[-1])
+            states[STATE_KEYS.HANDLE_OBJECT][STATE_KEYS.CUP] = int(item[-1])
+        return states
 
-    def _get_target_mug_from_drawer(self):
-        self.target_mug_id = self.target_states[STATE_KEYS.DRAWER_CONTAINS_CUP]
+    def _get_target_mug_from_drawer(self, states):
+        # self.target_mug_id = self.target_states[STATE_KEYS.DRAWER_CONTAINS_CUP]
+        target_drawer_id = states[STATE_KEYS.HANDLE_OBJECT][STATE_KEYS.DRAWER]
+        target_mug_id = states[STATE_KEYS.DRAWER_CONTAINS_CUP][target_drawer_id]
+        target_mug_id = 0 if target_mug_id is None else target_mug_id
+        states[STATE_KEYS.HANDLE_OBJECT][STATE_KEYS.CUP] = target_mug_id
+        return states
 
-    def _get_target_mug_from_coffee_machine(self):
-        self.target_mug_id = self.target_states[STATE_KEYS.COFFEE_MACHINE]
+    def _get_target_mug_from_coffee_machine(self, states):
+        # self.target_mug_id = self.target_states[STATE_KEYS.COFFEE_MACHINE]
+        target_coffee_machine_id = states[STATE_KEYS.HANDLE_OBJECT][STATE_KEYS.COFFEE_MACHINE]
+        target_mug_id = states[STATE_KEYS.COFFEE_MACHINE][target_coffee_machine_id]
+        target_mug_id = 0 if target_mug_id is None else target_mug_id
+        states[STATE_KEYS.HANDLE_OBJECT][STATE_KEYS.CUP] = target_mug_id
+        return states
 
     @property
     def handle_object(self) -> dict[str, int]:

@@ -3,8 +3,13 @@ import numpy as np
 from metaworld.policies.action import Action
 from metaworld.policies.policy import Policy, assert_fully_parsed, move
 from metaworld.envs.display_utils import QUAT_LIST
+from metaworld.envs.display_utils import safe_move
 
 class SawyerDrawerCloseV2DisplayPolicy(Policy):
+
+    def __init__(self, safe_move=False):
+        self.safe_move = safe_move
+        self.flag = False
 
     @staticmethod
     @assert_fully_parsed
@@ -31,14 +36,22 @@ class SawyerDrawerCloseV2DisplayPolicy(Policy):
             action['grab_effort'] = -1.
             return action.array
 
-        action['delta_pos'] = move(o_d['hand_pos'], to_xyz=self._desired_pos(o_d), p=10.)
+        if self.safe_move:
+            desired_pos, self.flag = self._desired_pos(o_d, self.flag)
+            if not self.flag:
+                action['delta_pos'] = safe_move(o_d['hand_pos'], to_xyz=desired_pos, p=10.)
+            else:
+                action['delta_pos'] = move(o_d['hand_pos'], to_xyz=desired_pos, p=10.)
+        else:
+            desired_pos, self.flag = self._desired_pos(o_d, self.flag)
+            action['delta_pos'] = move(o_d['hand_pos'], to_xyz=desired_pos, p=10.)
         action['grab_effort'] = 1.
 
         return action.array
 
 
     @staticmethod
-    def _desired_pos(o_d):
+    def _desired_pos(o_d, flag):
         pos_curr = o_d['hand_pos']
         pos_drwr = o_d['drwr_pos'] + np.array([.0, .0, -.02])
 
@@ -52,46 +65,46 @@ class SawyerDrawerCloseV2DisplayPolicy(Policy):
 
         if quat_index == 0:
             # if further forward than the drawer...
-            if pos_curr[1] > pos_drwr[1]:
+            if not flag:
                 if pos_curr[2] < pos_drwr[2] + 0.23:
                     # rise up quickly (Z direction)
-                    return np.array([pos_curr[0], pos_curr[1], pos_drwr[2] + 0.5])
-                else:
+                    return np.array([pos_curr[0], pos_curr[1], pos_drwr[2] + 0.5]), False
+                elif np.linalg.norm(pos_curr[:2] - (pos_drwr + np.array([0., -0.08, 0.23]))[:2]) > 0.02:
                     # move to front edge of drawer handle, but stay high in Z
-                    return pos_drwr + np.array([0., -0.08, 0.23])
+                    return pos_drwr + np.array([0., -0.08, 0.23]), False
             # drop down to touch drawer handle
-            elif abs(pos_curr[2] - pos_drwr[2]) > 0.01:
-                return pos_drwr + np.array([0., -0.08, 0.])
+            if abs(pos_curr[2] - pos_drwr[2]) > 0.01:
+                return pos_drwr + np.array([0., -0.08, 0.]), True
             # push toward drawer handle's centroid
             else:
-                return pos_drwr
+                return pos_drwr, True
         elif quat_index == 3:
-            if pos_curr[1] < pos_drwr[1]:
+            if not flag:
                 if pos_curr[2] < pos_drwr[2] + 0.23:
-                    return np.array([pos_curr[0], pos_curr[1], pos_drwr[2] + 0.5])
-                else:
-                    return pos_drwr + np.array([0., +0.08, 0.23])
-            elif abs(pos_curr[2] - pos_drwr[2]) > 0.01:
-                return pos_drwr + np.array([0., +0.08, 0.])
+                    return np.array([pos_curr[0], pos_curr[1], pos_drwr[2] + 0.5]), False
+                elif np.linalg.norm(pos_curr[:2] - (pos_drwr + np.array([0., +0.08, 0.23]))[:2]) > 0.03:
+                    return pos_drwr + np.array([0., +0.08, 0.23]), False
+            if abs(pos_curr[2] - pos_drwr[2]) > 0.01:
+                return pos_drwr + np.array([0., +0.08, 0.]), True
             else:
-                return pos_drwr
+                return pos_drwr, True
         elif quat_index == 1:
-            if pos_curr[0] < pos_drwr[0]:
+            if not flag:
                 if pos_curr[2] < pos_drwr[2] + 0.23:
-                    return np.array([pos_curr[0], pos_curr[1], pos_drwr[2] + 0.5])
-                else:
-                    return pos_drwr + np.array([+0.08, 0., 0.23])
-            elif abs(pos_curr[2] - pos_drwr[2]) > 0.01:
-                return pos_drwr + np.array([+0.08, 0., 0.])
+                    return np.array([pos_curr[0], pos_curr[1], pos_drwr[2] + 0.5]), False
+                elif np.linalg.norm(pos_curr[:2] - (pos_drwr + np.array([+0.08, 0., 0.23]))[:2]) > 0.03:
+                    return pos_drwr + np.array([+0.08, 0., 0.23]), False
+            if abs(pos_curr[2] - pos_drwr[2]) > 0.01:
+                return pos_drwr + np.array([+0.08, 0., 0.]), True
             else:
-                return pos_drwr
+                return pos_drwr, True
         else:
-            if pos_curr[0] > pos_drwr[0]:
+            if not flag:
                 if pos_curr[2] < pos_drwr[2] + 0.23:
-                    return np.array([pos_curr[0], pos_curr[1], pos_drwr[2] + 0.5])
-                else:
-                    return pos_drwr + np.array([-0.08, 0., 0.23])
-            elif abs(pos_curr[2] - pos_drwr[2]) > 0.01:
-                return pos_drwr + np.array([-0.08, 0., 0.])
+                    return np.array([pos_curr[0], pos_curr[1], pos_drwr[2] + 0.5]), False
+                elif np.linalg.norm(pos_curr[:2] - (pos_drwr + np.array([-0.08, 0., 0.23]))[:2]) > 0.03:
+                    return pos_drwr + np.array([-0.08, 0., 0.23]), False
+            if abs(pos_curr[2] - pos_drwr[2]) > 0.01:
+                return pos_drwr + np.array([-0.08, 0., 0.]), True
             else:
-                return pos_drwr
+                return pos_drwr, True
