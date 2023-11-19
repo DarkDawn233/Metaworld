@@ -150,6 +150,8 @@ class SawyerXYZEnv(SawyerMocapBase, metaclass=abc.ABCMeta):
         # very first observation)
         self._prev_obs = self._get_curr_obs_combined_no_goal()
 
+        self._last_reward_value = 0
+
     def _set_task_inner(self):
         # Doesn't absorb "extra" kwargs, to ensure nothing's missed.
         pass
@@ -436,9 +438,15 @@ class SawyerXYZEnv(SawyerMocapBase, metaclass=abc.ABCMeta):
             # functionality and end up returning the same sort of tuple that
             # this does
             return self._last_stable_obs
+        
+        _now_reward_value, info = self.evaluate_state(self._last_stable_obs, action)
+        reward = _now_reward_value - self._last_reward_value
+        self._last_reward_value = _now_reward_value
+        done = True if info['success'] else False
 
-        reward, info = self.evaluate_state(self._last_stable_obs, action)
-        return self._last_stable_obs, reward, False, info
+        # reward, info = self.evaluate_state(self._last_stable_obs, action)
+        # return self._last_stable_obs, reward, False, info
+        return self._last_stable_obs, reward, done, info
 
     def evaluate_state(self, obs, action):
         """Does the heavy-lifting for `step()` -- namely, calculating reward
@@ -457,7 +465,10 @@ class SawyerXYZEnv(SawyerMocapBase, metaclass=abc.ABCMeta):
 
     def reset(self):
         self.curr_path_length = 0
-        return super().reset()
+        ob = super().reset()
+        none_action = np.array([0., 0., 0., 0.])
+        self.evaluate_state(ob, none_action)
+        return ob
 
     def _reset_hand(self, steps=50):
         for _ in range(steps):
